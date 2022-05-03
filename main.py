@@ -1,6 +1,8 @@
 from data_base import main_db
 import pandas as pd
 from io import StringIO
+import psycopg2
+
 
 class Handler:
     def __init__(self):
@@ -26,7 +28,7 @@ class Handler:
 
     def get_properties(self, event_id):
         event_properties = self.db_instance.handler(
-            query=f"SELECT name, value FROM even_property WHERE event_id='{event_id}';"
+            query=f"SELECT id, name, value FROM even_property WHERE event_id='{event_id}';"
         )
         return event_properties
 
@@ -47,16 +49,21 @@ if __name__ == '__main__':
             df.to_csv(buffer, index_label='id', header=False)
             buffer.seek(0)
 
-            cursor = conn.cursor()
+            conn_data = handler.db_instance.get_conn_data()
+            conn = handler.db_instance.make_conn(data=conn_data)
+
             try:
-                cursor.copy_from(buffer, table, sep=",")
+                conn.cursor.copy_from(buffer, schema.name, sep=",")
                 conn.commit()
             except (Exception, psycopg2.DatabaseError) as error:
                 print("Error: %s" % error)
                 conn.rollback()
-                cursor.close()
+                conn.cursor.close()
 
-        # delete
+
+
+        # delete: properties and events
+
         # event_generic
         # ids
         # inserted in event_x
