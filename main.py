@@ -10,7 +10,7 @@ class Handler:
     def __init__(self):
         self.db_instance = main_db.DBInstance(public_key="aVFr8UuELcKw4BVh")
 
-    def get_migrated_schemas(self, query=""):
+    def get_migrated_schemas(self):
         event_schemas = self.db_instance.handler(
             query="SELECT * FROM event_schema WHERE db_status = 'migrated';"
         )
@@ -35,10 +35,10 @@ class Handler:
         return event_properties
 
     def delete_event(self, event_id):
-        delete_event = self.db_instance.handler(
+        delete_event_query = self.db_instance.handler(
             query=f"DELETE FROM user_event WHERE event_id='{event_id}';"
         )
-        return delete_event
+        return delete_event_query
 
 
 if __name__ == '__main__':
@@ -47,7 +47,7 @@ if __name__ == '__main__':
     migrated_schemas = handler.get_migrated_schemas()
 
     for schema in migrated_schemas:
-        while handler.user_events_count(name=schema.name) > 5000:
+        while handler.get_user_events_count(name=schema.name) > 5000:
             event_id = handler.get_event_id(name=schema.name)
             properties = handler.get_properties(event_id=event_id)
             properties_id = [i[0] for i in properties]
