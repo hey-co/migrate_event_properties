@@ -1,6 +1,8 @@
 from data_base import main_db
-import pandas as pd
+from psycopg2 import extras
 from io import StringIO
+
+import pandas as pd
 import psycopg2
 
 
@@ -32,6 +34,12 @@ class Handler:
         )
         return event_properties
 
+    def delete_event(self, event_id):
+        delete_event = self.db_instance.handler(
+            query=f"DELETE FROM user_event WHERE event_id='{event_id}';"
+        )
+        return delete_event
+
 
 if __name__ == '__main__':
     handler = Handler()
@@ -42,8 +50,9 @@ if __name__ == '__main__':
         while handler.user_events_count(name=schema.name) > 5000:
             event_id = handler.get_event_id(name=schema.name)
             properties = handler.get_properties(event_id=event_id)
+            properties_id = [i[0] for i in properties]
 
-            df = pd.DataFrame(properties, columns=['Name', 'Value'])
+            df = pd.DataFrame(properties, columns=['id', 'Name', 'Value'])
 
             buffer = StringIO()
             df.to_csv(buffer, index_label='id', header=False)
@@ -58,12 +67,10 @@ if __name__ == '__main__':
             except (Exception, psycopg2.DatabaseError) as error:
                 print("Error: %s" % error)
                 conn.rollback()
+            finally:
+                query = "DELETE FROM event_properties WHERE id = '%s'"
+                extras.execute_values(conn.cursor, query.as_string(conn.cursor), properties_id)
+                conn.commit()
+
+                delete_event = handler.delete_event(event_id=event_id)
                 conn.cursor.close()
-
-
-
-        # delete: properties and events
-
-        # event_generic
-        # ids
-        # inserted in event_x
