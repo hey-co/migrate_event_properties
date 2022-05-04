@@ -3,10 +3,10 @@ from main import main
 
 
 @pytest.fixture()
-def start_handler():
-    start = main.Handler()
+def start_main_class():
+    start = main.Main()
     return start
 
 
-def test_one(start_handler):
-    print(start_handler)
+def test_one(start_main_class):
+    print(start_main_class.execute())

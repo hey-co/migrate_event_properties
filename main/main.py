@@ -1,8 +1,12 @@
 from data_base import main_db
-from psycopg2 import extras
-from io import StringIO
 
 import pandas as pd
+from io import StringIO
+
+import logging
+logger = logging.getLogger()
+
+from psycopg2 import extras
 import psycopg2
 
 
@@ -13,6 +17,7 @@ class Main:
 
     def execute(self):
         migrated_schemas = self.get_migrated_schemas()
+
         conn = self.db_instance.make_conn(data=self.db_instance.get_conn_data())
 
         for schema in migrated_schemas:
@@ -33,7 +38,7 @@ class Main:
                 try:
                     self.insert_data(data=data_insert)
                 except (Exception, psycopg2.DatabaseError) as error:
-                    print("Error: %s" % error)
+                    logger.error(str(error))
                     conn.rollback()
                 finally:
                     query = "DELETE FROM event_properties WHERE id = '%s'"
@@ -95,6 +100,5 @@ class Main:
 
 
 if __name__ == "__main__":
-    if __name__ == "__main__":
-        main = Main()
-        main.execute()
+    main = Main()
+    main.execute()
