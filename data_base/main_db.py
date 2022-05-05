@@ -24,7 +24,7 @@ class DBInstance:
         tanants_conn_data = {
             "db_name": os.environ["TENANT_NAME_DB"],
             "db_user": os.environ["TENANT_USER_DB"],
-            "db_host": os.environ["TENANT_HOST_DB"],
+            "db_host": os.environ["HOST_REPLICA"],
             "db_password": os.environ["TENANT_PASSWORD_DB"],
         }
 
@@ -41,7 +41,7 @@ class DBInstance:
                     conn_data = {
                         "db_name": tenant[1],
                         "db_user": tenant[2],
-                        "db_host": tenant[3],
+                        "db_host": tenant[6],
                         "db_password": tenant[4],
                     }
         return conn_data

@@ -1,7 +1,8 @@
 from data_base import main_db
+from io import StringIO
 
 import pandas as pd
-from io import StringIO
+import os
 
 import logging
 logger = logging.getLogger()
@@ -12,14 +13,15 @@ import psycopg2
 
 class Main:
     def __init__(self):
-        self.db_instance = main_db.DBInstance(public_key="aVFr8UuELcKw4BVh")
+        self.db_instance = main_db.DBInstance(public_key=os.environ["ELCOLOMBIANO"])
         self.buffer = StringIO()
 
     def execute(self):
         migrated_schemas = self.get_migrated_schemas()
-
         conn = self.db_instance.make_conn(data=self.db_instance.get_conn_data())
+        print(migrated_schemas)
 
+        """
         for schema in migrated_schemas:
             while self.get_user_events_count(name=schema.name) > 5000:
 
@@ -30,7 +32,7 @@ class Main:
                 data_insert = {
                     "properties": properties,
                     "conn": conn,
-                    "schema_name": schema.name,
+                    "schema_name": schema.name
                 }
 
                 properties_ids = self.get_properties_ids(data=properties)
@@ -51,10 +53,11 @@ class Main:
                         event_id=self.get_event_id(name=schema.name)
                     )
                     conn.cursor.close()
+        """
 
     def get_migrated_schemas(self):
         event_schemas = self.db_instance.handler(
-            query="SELECT * FROM event_schema WHERE db_status = 'migrated';"
+            query="SELECT * FROM event_schema WHERE db_status = 'pending_create';"
         )
         return event_schemas
 
