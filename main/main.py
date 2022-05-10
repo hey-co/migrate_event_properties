@@ -23,22 +23,29 @@ class Main:
         conn = self.db_instance.make_conn(data=self.db_instance.get_conn_data())
 
         for schema in migrated_schemas:
-            # while self.get_user_events_count(name=schema[1]) > 5000:
+
             event_id: int = self.get_event_id(name=schema[1])
 
+            print(self.get_pivot(event_id=event_id))
+
+            # Buscar los valores que no se le puedan hacer match en el  tipo de dato.
+            """
             properties: pd.DataFrame = self.get_properties(event_id=event_id)
+
+            properties_ids: List[int] = self.get_properties_ids(data=properties)
 
             data_insert: Dict[str, Any] = {
                 "properties": properties,
                 "conn": conn,
                 "event_id": event_id
             }
+            print(properties)
+            """
 
-            properties_ids: List[int] = self.get_properties_ids(data=properties)
-
+            """
             try:
                 self.insert_data(data=data_insert)
-            except (Exception, psycopg2.DatabaseError) as error:
+            except (Exception, psycopg2.DatabaseError   ) as error:
                 logger.error(str(error))
                 conn.rollback()
             finally:
@@ -52,12 +59,45 @@ class Main:
                     event_id=self.get_event_id(name=schema[1])
                 )
                 conn.cursor.close()
+            """
+
+    def get_event_schema_properties(self, event_id: int) -> List[Tuple[Any]]:
+        try:
+            event_schemas_properties = self.db_instance.handler(
+                query="SELECT id, name, type FROM property_event_schema WHERE event_id = event_id limit 100;"
+            )
+        except Exception:
+            raise Exception
+            return []
+        else:
+            return event_schemas_properties
+
+    def get_pivot(self, event_id):
+        columns = self.get_str_event_schema_properties(event_id=event_id)
+
+        query_crostab = f"""select * from
+                    (select * from crosstab('select event_id, name, value from event_property where name in
+                    (select name from user_event where user_event.id ={event_id} limit 5000)') as ct({columns}))"""
+
+        return query_crostab
+
+    def get_str_event_schema_properties(self, event_id: int) -> str:
+        event_schemas_properties = self.get_event_schema_properties(event_id=event_id)
+        if event_schemas_properties:
+            strings = [f'"{i[0]}" {i[1]}' for i in event_schemas_properties]
+            ins = ','.join([str(i) for i in strings])
+        return ins
 
     def get_migrated_schemas(self) -> List[Tuple[Any]]:
-        event_schemas = self.db_instance.handler(
-            query="SELECT * FROM event_schema WHERE db_status = 'pending_create';"
-        )
-        return event_schemas
+        try:
+            event_schemas = self.db_instance.handler(
+                query="SELECT * FROM event_schema WHERE db_status = 'pending_create';"
+            )
+        except Exception:
+            raise Exception
+            return []
+        else:
+            return event_schemas
 
     def get_user_events_count(self, name: str) -> int:
         user_events_count = self.db_instance.handler(
@@ -66,10 +106,19 @@ class Main:
         return user_events_count[0][0]
 
     def get_event_id(self, name: str) -> int:
-        event_id = self.db_instance.handler(
-            query=f"SELECT id FROM user_event WHERE name='{name}' LIMIT 1;"
-        )
-        return event_id[0][0]
+        # Propiedades de todos los eventos.
+        # Count de las properties.
+        try:
+            event_id = self.db_instance.handler(
+                query=f"SELECT id FROM user_event WHERE name='{name}' LIMIT 1;"
+            )
+        except Exception:
+            raise Exception
+        else:
+            if event_id:
+                return event_id[0][0]
+            else:
+                return 0
 
     def get_properties(self, event_id: int) -> pd.DataFrame:
         event_properties = self.db_instance.handler(
