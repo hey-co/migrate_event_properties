@@ -13,26 +13,34 @@ class Cast:
     def __init__(self) -> None:
         self.db_instance = main_db.DBInstance(public_key=os.environ["ELCOLOMBIANO"])
 
-    def testing_function(self):
+    def execute(self):
         migrated_schemas: List[Tuple[Any]] = self.get_migrated_schemas()
 
         for migrated_schema in migrated_schemas:
 
-            generic_events = self.get_generic_events_name(schema_name=migrated_schema[1])
+            generic_events = self.get_generic_events_name(
+                schema_name=migrated_schema[1]
+            )
 
             for generic_event in generic_events:
-                generic_properties = self.get_generic_properties(event_id=generic_event[0])
+                generic_properties = self.get_generic_properties(
+                    event_id=generic_event[0]
+                )
 
-
-            event_schema_properties = self.get_event_schema_properties(event_id=migrated_schema[0])
+            event_schema_properties = self.get_event_schema_properties(
+                event_id=migrated_schema[0]
+            )
 
             for event_schema_property in event_schema_properties:
-                event_properties = self.testing_event_properties(property_id=event_schema_property[0])
+                event_properties = self.get_event_sechema_properties(
+                    property_id=event_schema_property[0]
+                )
 
-                #Posible for event_properties
+                # Posible for event_properties
 
-                self.execute_cast(value=event_properties[0][0], to_cast=event_schema_property[2])
-
+                self.execute_cast(
+                    value=event_properties[0][0], to_cast=event_schema_property[2]
+                )
 
     def get_generic_properties(self, event_id):
         try:
@@ -58,15 +66,13 @@ class Cast:
 
     def execute_cast(self, value: Any, to_cast: Any):
         try:
-            cast = self.db_instance.handler(
-                query=f"SELECT {value}::{to_cast};"
-            )
+            cast = self.db_instance.handler(query=f"SELECT {value}::{to_cast};")
         except Exception:
             raise Exception
         else:
             return cast
 
-    def testing_event_properties(self, property_id):
+    def get_event_sechema_properties(self, property_id):
         event_properties = self.db_instance.handler(
             query=f"SELECT id, value FROM event_property WHERE id={property_id} limit 100;"
         )
@@ -96,5 +102,5 @@ class Cast:
 
 
 if __name__ == "__main__":
-    main = Main()
+    main = Cast()
     main.execute()
