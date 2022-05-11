@@ -5,10 +5,6 @@ from io import StringIO
 import pandas as pd
 import os
 
-import logging
-
-logger = logging.getLogger()
-
 from psycopg2 import extras
 import psycopg2
 
@@ -23,10 +19,7 @@ class Main:
         conn = self.db_instance.make_conn(data=self.db_instance.get_conn_data())
 
         for schema in migrated_schemas:
-
             event_id: int = self.get_event_id(name=schema[1])
-
-            print(self.get_pivot(event_id=event_id))
 
             # Buscar los valores que no se le puedan hacer match en el  tipo de dato.
             """
@@ -66,9 +59,8 @@ class Main:
             event_schemas_properties = self.db_instance.handler(
                 query="SELECT id, name, type FROM property_event_schema WHERE event_id = event_id limit 100;"
             )
-        except Exception:
-            raise Exception
-            return []
+        except Exception as e:
+            raise e
         else:
             return event_schemas_properties
 
@@ -85,17 +77,16 @@ class Main:
         event_schemas_properties = self.get_event_schema_properties(event_id=event_id)
         if event_schemas_properties:
             strings = [f'"{i[0]}" {i[1]}' for i in event_schemas_properties]
-            ins = ','.join([str(i) for i in strings])
-        return ins
+            ins = ",".join([str(i) for i in strings])
+            return ins
 
     def get_migrated_schemas(self) -> List[Tuple[Any]]:
         try:
             event_schemas = self.db_instance.handler(
                 query="SELECT * FROM event_schema WHERE db_status = 'pending_create';"
             )
-        except Exception:
-            raise Exception
-            return []
+        except Exception as e:
+            raise e
         else:
             return event_schemas
 
@@ -112,8 +103,8 @@ class Main:
             event_id = self.db_instance.handler(
                 query=f"SELECT id FROM user_event WHERE name='{name}' LIMIT 1;"
             )
-        except Exception:
-            raise Exception
+        except Exception as e:
+            raise e
         else:
             if event_id:
                 return event_id[0][0]
@@ -143,10 +134,14 @@ class Main:
         data["conn"].commit()
 
     def delete_event(self, event_id: int) -> List[Tuple[Any]]:
-        delete_event_query = self.db_instance.handler(
-            query=f"DELETE FROM user_event WHERE event_id='{event_id}';"
-        )
-        return delete_event_query
+        try:
+            delete_event_query = self.db_instance.handler(
+                query=f"DELETE FROM user_event WHERE event_id='{event_id}';"
+            )
+        except Exception as e:
+            raise e
+        else:
+            return delete_event_query
 
 
 if __name__ == "__main__":

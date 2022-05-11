@@ -1,12 +1,7 @@
-from typing import List, Tuple, Any, Dict
+from typing import List, Tuple, Any
 from data_base import main_db
-from psycopg2 import extras
 
-import psycopg2
 import os
-import logging
-
-logger = logging.getLogger()
 
 
 class Cast:
@@ -18,85 +13,54 @@ class Cast:
 
         for migrated_schema in migrated_schemas:
 
-            generic_events = self.get_generic_events_name(
-                schema_name=migrated_schema[1]
+            generic_properties = self.get_generic_properties(migrated_schema[1])
+
+            migrated_event_properties = self.get_migrated_event_properties(
+                migrated_event_id=migrated_schema[0]
             )
 
-            for generic_event in generic_events:
-                generic_properties = self.get_generic_properties(
-                    event_id=generic_event[0]
-                )
-
-            event_schema_properties = self.get_event_schema_properties(
-                event_id=migrated_schema[0]
+            """
+            self.execute_cast(
+                value=event_properties[0][0], to_cast=event_schema_property[2]
             )
-
-            for event_schema_property in event_schema_properties:
-                event_properties = self.get_event_sechema_properties(
-                    property_id=event_schema_property[0]
-                )
-
-                # Posible for event_properties
-
-                self.execute_cast(
-                    value=event_properties[0][0], to_cast=event_schema_property[2]
-                )
-
-    def get_generic_properties(self, event_id):
-        try:
-            generic_properties = self.db_instance.handler(
-                query=f"SELECT * FROM event_property WHERE event_id=event_id limit 100;"
-            )
-        except Exception:
-            raise Exception
-            return []
-        else:
-            return generic_properties
-
-    def get_generic_events_name(self, schema_name):
-        try:
-            generic_schemas = self.db_instance.handler(
-                query=f"SELECT * FROM user_event WHERE name = '{schema_name}' limit 100;"
-            )
-        except Exception:
-            raise Exception
-            return []
-        else:
-            return generic_schemas
+            """
 
     def execute_cast(self, value: Any, to_cast: Any):
         try:
             cast = self.db_instance.handler(query=f"SELECT {value}::{to_cast};")
-        except Exception:
-            raise Exception
+        except Exception as e:
+            raise e
         else:
             return cast
 
-    def get_event_sechema_properties(self, property_id):
-        event_properties = self.db_instance.handler(
-            query=f"SELECT id, value FROM event_property WHERE id={property_id} limit 100;"
-        )
-        return event_properties
-
-    def get_event_schema_properties(self, event_id: int) -> List[Tuple[Any]]:
+    def get_generic_properties(self, name_event):
         try:
-            event_schemas_properties = self.db_instance.handler(
-                query="SELECT id, name, type FROM property_event_schema WHERE event_id = event_id limit 100;"
+            generic_properties = self.db_instance.handler(
+                query=f"""select name, count(*) from event_property where event_id in 
+                    (select id from user_event where name='{name_event}') group by name"""
             )
-        except Exception:
-            raise Exception
-            return []
+        except Exception as e:
+            raise e
         else:
-            return event_schemas_properties
+            return generic_properties
+
+    def get_migrated_event_properties(self, migrated_event_id):
+        try:
+            event_properties = self.db_instance.handler(
+                query=f"select * from property_event_schema where event_id={migrated_event_id};"
+            )
+        except Exception as e:
+            raise e
+        else:
+            return event_properties
 
     def get_migrated_schemas(self) -> List[Tuple[Any]]:
         try:
             event_schemas = self.db_instance.handler(
                 query="SELECT * FROM event_schema WHERE db_status = 'pending_create';"
             )
-        except Exception:
-            raise Exception
-            return []
+        except Exception as e:
+            raise e
         else:
             return event_schemas
 

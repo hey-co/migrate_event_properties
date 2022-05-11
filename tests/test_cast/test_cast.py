@@ -9,4 +9,4 @@ def start_main_class():
 
 
 def test_casting_function(start_main_class):
-    print(start_main_class.testing_function())
+    print(start_main_class.execute())
