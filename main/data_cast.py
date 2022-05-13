@@ -2,6 +2,7 @@ from typing import List, Tuple, Any
 from data_base import main_db
 
 import os
+import unidecode
 
 
 class Cast:
@@ -18,6 +19,21 @@ class Cast:
             migrated_event_properties = self.get_migrated_event_properties(
                 migrated_event_id=migrated_schema[0]
             )
+
+            cleaned_names: list = list(
+                map(
+                    self.clean_name_properties,
+                    [i[1] for i in migrated_event_properties],
+                )
+            )
+
+            """
+            for i in cleaned_names:
+                if i in [j[0] for j in generic_properties]:
+                    print("Made crosstab")
+                else:
+                    print("Raise exception")
+            """
 
             """
             self.execute_cast(
@@ -63,6 +79,12 @@ class Cast:
             raise e
         else:
             return event_schemas
+
+    def clean_name_properties(self, name: str) -> str:
+        name = unidecode.unidecode(
+            name.replace("|", "").replace(" ", "_").replace("__", "_")
+        )
+        return name
 
 
 if __name__ == "__main__":
