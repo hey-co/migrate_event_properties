@@ -1,5 +1,5 @@
 import pytest
-from main import data_cast
+from main.Validation import validation
 
 
 @pytest.fixture()

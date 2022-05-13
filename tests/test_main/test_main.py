@@ -1,5 +1,5 @@
 import pytest
-from main import main
+from main.Migration import migration
 
 
 @pytest.fixture()
