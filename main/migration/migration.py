@@ -11,7 +11,7 @@ import psycopg2
 
 class Main:
     def __init__(self) -> None:
-        self.db_instance = main_db.DBInstance(public_key=os.environ["ELCOLOMBIANO"])
+        self.db_instance = main_db.DBInstance(public_key=os.environ["DEV_BACK"])
         self.buffer = StringIO()
 
     def execute(self):

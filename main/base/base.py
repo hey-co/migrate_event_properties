@@ -7,7 +7,7 @@ import unidecode
 
 class Base:
     def __init__(self) -> None:
-        self.db_instance = main_db.DBInstance(public_key=os.environ["ELCOLOMBIANO"])
+        self.db_instance = main_db.DBInstance(public_key=os.environ["DEV_BACK"])
 
     def handler(self):
         migrated_schemas: List[Tuple[Any]] = self.get_migrated_schemas()
