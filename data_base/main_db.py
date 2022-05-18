@@ -65,6 +65,10 @@ class DBInstance:
     def fetch_data(self, conn, query):
         cursor = conn.cursor()
         cursor.execute(query)
-        result = [line for line in cursor.fetchall()]
+        if cursor.description:
+            result = [line for line in cursor.fetchall()]
+        else:
+            result = []
+        conn.commit()
         cursor.close()
         return result

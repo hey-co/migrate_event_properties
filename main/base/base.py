@@ -1,6 +1,6 @@
 from typing import List, Tuple, Any
 from data_base import main_db
-
+from datetime import datetime
 import os
 import unidecode
 import pandas as pd
@@ -27,35 +27,58 @@ class Base:
                 )
             )
 
-            event_names_1 = [
-                event_name
-                for event_name in [
-                    n
-                    for n in cleaned_names
-                    if n not in [gp[0] for gp in generic_properties]
-                ]
-            ]
-
-            event_names_2 = [
-                event_name
-                for event_name in [gp[0] for gp in generic_properties]
-                if event_name in cleaned_names
-            ]
-
-            event_names = event_names_1 + event_names_2
+            event_names = self.get_event_names(
+                cleaned_names=cleaned_names, generic_properties=generic_properties
+            )
 
             for event_name in event_names:
-                self.get_user_events_properties(event_name=event_name)
+                events_properties = self.get_user_events_properties(
+                    event_name=event_name
+                )
 
-    def get_user_events_properties_query(self, event_name):
-        query = f"""SELECT event_property.id, event_property.event_id, event_property.name, 
-            event_property.value, user_event.name, user_event.created_at,
-            user_event.updated_at, user_event.valid, user_event.user_id
-            FROM event_property
-            INNER JOIN user_event ON event_property.event_id=user_event.id
-            WHERE user_event.id in 
-                (SELECT id FROM user_event WHERE name = '{event_name}' AND migrated=false limit 5000);"""
-        return query
+                for event_property in events_properties:
+                    a = [
+                        i
+                        for i in migrated_schema_properties
+                        if self.clean_name_properties(name=i[1]) == event_property[4]
+                    ][0]
+
+                    if a[2] == "text":
+                        if isinstance(event_property[3], str):
+                            self.update_valid_user_event(event_id=event_property[2])
+                        else:
+                            self.update_invalid_user_event(event_id=event_property[2])
+                    elif a[2] == "numeric":
+                        if isinstance(event_property[3], int):
+                            self.update_user_event(event_id=event_property[2])
+                        else:
+                            self.update_invalid_user_event(event_id=event_property[2])
+                    elif a[2] == "date":
+                        if isinstance(event_property[3], datetime):
+                            self.update_user_event(event_id=event_property[2])
+                        else:
+                            self.update_invalid_user_event(event_id=event_property[2])
+
+    def update_valid_user_event(self, event_id):
+        try:
+            update_user_event = self.db_instance.handler(
+                query=f"UPDATE user_event SET valid ='validated', WHERE id={event_id};"
+            )
+        except Exception as e:
+            raise e
+        else:
+            return update_user_event
+
+    def update_invalid_user_event(self, event_id):
+        try:
+            update_user_event = self.db_instance.handler(
+                query=f"UPDATE user_event SET valid ='unvalid', WHERE id={event_id};"
+            )
+        except Exception as e:
+            raise e
+        else:
+            return update_user_event
+
 
     def get_user_events_properties(self, event_name):
         try:
@@ -65,21 +88,36 @@ class Base:
         except Exception as e:
             raise e
         else:
-            return self.get_df_events_properties(data=user_events_properties)
+            return user_events_properties
 
-    def get_df_events_properties(self, data):
-        columns = [
-            "property_id",
-            "event_id",
-            "property_name",
-            "property_value",
-            "event_name",
-            "event_created_at",
-            "event_updated_at",
-            "event_valid",
-            "event_user_id",
+    def get_user_events_properties_query(self, event_name):
+        query = f"""SELECT event_property.id, event_property.event_id, event_property.name, 
+            event_property.value, user_event.name, user_event.created_at,
+            user_event.updated_at, user_event.valid, user_event.user_id
+            FROM event_property
+            INNER JOIN user_event ON event_property.event_id=user_event.id
+            WHERE user_event.id in 
+                (SELECT id FROM user_event WHERE name = '{event_name}' AND migrated=false limit 5000)
+            ORDER BY user_event.id;"""
+        return query
+
+    def get_event_names(self, cleaned_names, generic_properties):
+        event_names_1 = [
+            event_name
+            for event_name in [
+                n
+                for n in cleaned_names
+                if n not in [gp[0] for gp in generic_properties]
+            ]
         ]
-        df = pd.DataFrame(data, columns=columns)
+
+        event_names_2 = [
+            event_name
+            for event_name in [gp[0] for gp in generic_properties]
+            if event_name in cleaned_names
+        ]
+
+        return event_names_1 + event_names_2
 
     def get_generic_properties(self, name_event):
         try:
