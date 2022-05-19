@@ -105,7 +105,8 @@ class Validation:
         else:
             return user_events_properties
 
-    def get_user_events_properties_query(self, event_name):
+    @staticmethod
+    def get_user_events_properties_query(event_name):
         query = f"""SELECT 
                       event_property.id, 
                       event_property.event_id, 
@@ -136,7 +137,8 @@ class Validation:
                 """
         return query
 
-    def get_event_names(self, cleaned_names, generic_properties):
+    @staticmethod
+    def get_event_names(cleaned_names, generic_properties):
         event_names_1 = [
             event_name
             for event_name in [
@@ -185,7 +187,8 @@ class Validation:
         else:
             return event_schemas
 
-    def clean_name_properties(self, name: str) -> str:
+    @staticmethod
+    def clean_name_properties(name: str) -> str:
         name = unidecode.unidecode(
             name.replace("|", "").replace(" ", "_").replace("__", "_")
         )
