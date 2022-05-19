@@ -14,10 +14,13 @@ class Validation:
         # TODO: Normalize data format
         # TODO: Structure
         migrated_schemas: List[Tuple[Any]] = self.get_migrated_schemas()
+        self.validate_events(migrated_schemas=migrated_schemas)
 
     def validate_events(self, migrated_schemas):
         for migrated_schema in migrated_schemas:
-            generic_properties = self.get_generic_properties(migrated_schema[1])
+            generic_properties = self.get_generic_properties(
+                migrated_schema[1]
+            )
 
             schema_properties = self.get_schema_properties(
                 migrated_event_id=migrated_schema[0]
@@ -29,6 +32,8 @@ class Validation:
                     [i[1] for i in schema_properties],
                 )
             )
+
+
 
             event_names = self.get_event_names(
                 cleaned_names=cleaned_names, generic_properties=generic_properties
