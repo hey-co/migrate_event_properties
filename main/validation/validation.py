@@ -11,13 +11,11 @@ class Validation:
         self.db_instance = main_db.DBInstance(public_key=os.environ["ELCOLOMBIANO"])
 
     def handler(self):
-        #TODO: While Pagination
+        # TODO: While Pagination
         migrated_schemas: List[Tuple[Any]] = self.get_migrated_schemas()
 
         for migrated_schema in migrated_schemas:
-            generic_properties = self.get_generic_properties(
-                migrated_schema[1]
-            )
+            generic_properties = self.get_generic_properties(migrated_schema[1])
 
             migrated_schema_properties = self.get_migrated_schema_properties(
                 migrated_event_id=migrated_schema[0]
@@ -45,7 +43,6 @@ class Validation:
                         for i in migrated_schema_properties
                         if self.clean_name_properties(name=i[1]) == event_property[4]
                     ][0]
-
 
         """"
                     if a[2] == "text":
@@ -96,14 +93,34 @@ class Validation:
             return user_events_properties
 
     def get_user_events_properties_query(self, event_name):
-        query = f"""SELECT event_property.id, event_property.event_id, event_property.name, 
-            event_property.value, user_event.name, user_event.created_at,
-            user_event.updated_at, user_event.valid, user_event.user_id
-            FROM event_property
-            INNER JOIN user_event ON event_property.event_id=user_event.id
-            WHERE user_event.id in 
-                (SELECT id FROM user_event WHERE name = '{event_name}' AND migrated=false limit 5000)
-            ORDER BY user_event.id;"""
+        query = f"""SELECT 
+                      event_property.id, 
+                      event_property.event_id, 
+                      event_property.name, 
+                      event_property.value, 
+                      user_event.name, 
+                      user_event.created_at, 
+                      user_event.updated_at, 
+                      user_event.valid, 
+                      user_event.user_id 
+                    FROM 
+                      event_property 
+                      INNER JOIN user_event ON event_property.event_id = user_event.id 
+                    WHERE 
+                      user_event.id in (
+                        SELECT 
+                          id 
+                        FROM 
+                          user_event 
+                        WHERE 
+                          name = '{event_name}' 
+                          AND migrated = false 
+                        limit 
+                          5000
+                      ) 
+                    ORDER BY 
+                      user_event.id;
+                """
         return query
 
     def get_event_names(self, cleaned_names, generic_properties):
