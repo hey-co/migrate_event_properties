@@ -15,7 +15,7 @@ class Users:
     def get_users_to_migrate(self) -> List[Tuple[Any]]:
         try:
             users_to_migrate = self.db_instance.handler(
-                query="SELECT * from user_company WHERE email OR mobile_number OR identification;"
+                query="SELECT * from user_company WHERE email IS NOT NULL OR mobile_number IS NOT NULL OR identification IS NOT NULL limit 5000;"
             )
         except Exception as e:
             raise e
