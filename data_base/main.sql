@@ -145,3 +145,75 @@ BEGIN
 END
 $$
 LANGUAGE PLPGSQL;
+
+
+
+
+
+
+
+
+---------------------------------------------------------------------------------------
+
+SELECT
+  event_property.id,
+  event_property.event_id,
+  event_property.name,
+  event_property.value,
+  user_event.id,
+  user_event.name,
+  user_event.created_at,
+  user_event.updated_at,
+  user_event.valid,
+  user_event.user_id
+FROM
+  event_property
+  INNER JOIN user_event ON event_property.event_id = user_event.id
+WHERE
+  user_event.id in (
+    SELECT
+      id
+    FROM
+      user_event
+    WHERE
+      name = 'Review made'
+      AND migrated = false
+    limit
+      5000
+  );
+
+
+select * from user_event limit 500;
+
+
+SELECT
+  event_property.id,
+  event_property.event_id,
+  event_property.name,
+  event_property.value,
+  user_event.name,
+  user_event.created_at,
+  user_event.updated_at,
+  user_event.valid,
+  user_event.user_id
+FROM
+  event_property
+  INNER JOIN user_event ON event_property.event_id = user_event.id
+WHERE
+  user_event.id in (
+    SELECT
+      id
+    FROM
+      user_event
+    WHERE
+      name = 'Paga cuota'
+      AND migrated = false
+    limit
+      5000
+  )
+ORDER BY
+  user_event.id;
+
+
+
+select * from user_event where id = 9550;

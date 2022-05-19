@@ -19,7 +19,8 @@ class DBInstance:
         return Fernet(key).decrypt(token.encode()).decode()
 
     def get_tenants(self):
-        tenants_query = "SELECT t.hey_key, t.db_name, t.db_user, t.db_host, t.db_password, t.db_port, t.db_host_for_reading FROM tenant as t;"
+        tenants_query = """SELECT t.hey_key, t.db_name, t.db_user, 
+        t.db_host, t.db_password, t.db_port, t.db_host_for_reading FROM tenant as t;"""
 
         tanants_conn_data = {
             "db_name": os.environ["TENANT_NAME_DB"],
