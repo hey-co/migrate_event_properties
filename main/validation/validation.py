@@ -3,7 +3,6 @@ from data_base import main_db
 from datetime import datetime
 import os
 import unidecode
-import pandas as pd
 
 
 class Validation:
@@ -12,19 +11,22 @@ class Validation:
 
     def handler(self):
         # TODO: While Pagination
+        # TODO: Normalize data format
+        # TODO: Structure
         migrated_schemas: List[Tuple[Any]] = self.get_migrated_schemas()
 
+    def validate_events(self, migrated_schemas):
         for migrated_schema in migrated_schemas:
             generic_properties = self.get_generic_properties(migrated_schema[1])
 
-            migrated_schema_properties = self.get_migrated_schema_properties(
+            schema_properties = self.get_schema_properties(
                 migrated_event_id=migrated_schema[0]
             )
 
             cleaned_names: list = list(
                 map(
                     self.clean_name_properties,
-                    [i[1] for i in migrated_schema_properties],
+                    [i[1] for i in schema_properties],
                 )
             )
 
@@ -37,29 +39,35 @@ class Validation:
                     event_name=event_name
                 )
 
-                for event_property in events_properties:
-                    a = [
-                        i
-                        for i in migrated_schema_properties
-                        if self.clean_name_properties(name=i[1]) == event_property[4]
-                    ][0]
+                self.validate_user_event(
+                    events_properties=events_properties,
+                    schema_properties=schema_properties
+                )
+
+    def validate_user_event(self, events_properties, schema_properties):
+        for event_property in events_properties:
+            a = [
+                i
+                for i in schema_properties
+                if self.clean_name_properties(name=i[1]) == event_property[4]
+            ][0]
 
         """"
-                    if a[2] == "text":
-                        if isinstance(event_property[3], str):
-                            self.update_valid_user_event(event_id=event_property[2])
-                        else:
-                            self.update_invalid_user_event(event_id=event_property[2])
-                    elif a[2] == "numeric":
-                        if isinstance(event_property[3], int):
-                            self.update_user_event(event_id=event_property[2])
-                        else:
-                            self.update_invalid_user_event(event_id=event_property[2])
-                    elif a[2] == "date":
-                        if isinstance(event_property[3], datetime):
-                            self.update_user_event(event_id=event_property[2])
-                        else:
-                            self.update_invalid_user_event(event_id=event_property[2])
+            if a[2] == "text":
+                if isinstance(event_property[3], str):
+                    self.update_valid_user_event(event_id=event_property[2])
+                else:
+                    self.update_invalid_user_event(event_id=event_property[2])
+            elif a[2] == "numeric":
+                if isinstance(event_property[3], int):
+                    self.update_user_event(event_id=event_property[2])
+                else:
+                    self.update_invalid_user_event(event_id=event_property[2])
+            elif a[2] == "date":
+                if isinstance(event_property[3], datetime):
+                    self.update_user_event(event_id=event_property[2])
+                else:
+                    self.update_invalid_user_event(event_id=event_property[2])
         """
 
     def update_valid_user_event(self, event_id):
@@ -152,7 +160,7 @@ class Validation:
         else:
             return generic_properties
 
-    def get_migrated_schema_properties(self, migrated_event_id):
+    def get_schema_properties(self, migrated_event_id):
         try:
             event_properties = self.db_instance.handler(
                 query=f"select * from property_event_schema where event_id={migrated_event_id};"
