@@ -8,6 +8,10 @@ def start_main_class():
     return start
 
 
+def test_general(start_main_class):
+    print(start_main_class.handler())
+
+
 def test_get_migrated_schemas(start_main_class):
     assert type(start_main_class.get_migrated_schemas()) == list
 

@@ -11,9 +11,9 @@ class Validation:
         self.db_instance = main_db.DBInstance(public_key=os.environ["ELCOLOMBIANO"])
 
     def handler(self):
+        #TODO: While Pagination
         migrated_schemas: List[Tuple[Any]] = self.get_migrated_schemas()
-        print(migrated_schemas)
-        """
+
         for migrated_schema in migrated_schemas:
             generic_properties = self.get_generic_properties(
                 migrated_schema[1]
@@ -45,7 +45,7 @@ class Validation:
                         for i in migrated_schema_properties
                         if self.clean_name_properties(name=i[1]) == event_property[4]
                     ][0]
-        """
+
 
         """"
                     if a[2] == "text":
