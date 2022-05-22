@@ -2,6 +2,7 @@ from typing import List, Tuple, Any, Dict
 from data_base import main_db
 from io import StringIO
 
+import unidecode
 import pandas as pd
 import os
 
@@ -19,22 +20,29 @@ class Main:
         conn = self.db_instance.make_conn(data=self.db_instance.get_conn_data())
 
         for schema in migrated_schemas:
-            event_id: int = self.get_event_id(name=schema[1])
+            generic_properties = self.get_generic_properties(
+                schema[1]
+            )
 
-            # Buscar los valores que no se le puedan hacer match en el  tipo de dato.
-            """
-            properties: pd.DataFrame = self.get_properties(event_id=event_id)
+            schema_properties = self.get_schema_properties(
+                migrated_event_id=schema[0]
+            )
 
-            properties_ids: List[int] = self.get_properties_ids(data=properties)
+            cleaned_names: list = list(
+                map(
+                    self.clean_name_properties,
+                    [i[1] for i in schema_properties],
+                )
+            )
 
-            data_insert: Dict[str, Any] = {
-                "properties": properties,
-                "conn": conn,
-                "event_id": event_id
-            }
-            print(properties)
-            """
+            event_names = self.get_event_names(
+                cleaned_names=cleaned_names, generic_properties=generic_properties
+            )
 
+            for event_name in event_names:
+                events_properties = self.get_user_events_properties(
+                    event_name=event_name
+                )
             """
             try:
                 self.insert_data(data=data_insert)
@@ -54,6 +62,7 @@ class Main:
                 conn.cursor.close()
             """
 
+    """
     def get_event_schema_properties(self, event_id: int) -> List[Tuple[Any]]:
         try:
             event_schemas_properties = self.db_instance.handler(
@@ -63,6 +72,109 @@ class Main:
             raise e
         else:
             return event_schemas_properties
+    """
+
+    def get_user_events_properties(self, event_name):
+        try:
+            user_events_properties = self.db_instance.handler(
+                query=self.get_user_events_properties_query(event_name=event_name)
+            )
+        except Exception as e:
+            raise e
+        else:
+            return user_events_properties
+
+    @staticmethod
+    def get_user_events_properties_query(event_name):
+        query = f"""SELECT 
+                      event_property.id, 
+                      event_property.event_id, 
+                      event_property.name, 
+                      event_property.value, 
+                      user_event.name, 
+                      user_event.created_at, 
+                      user_event.updated_at, 
+                      user_event.valid, 
+                      user_event.user_id 
+                    FROM 
+                      event_property 
+                      INNER JOIN user_event ON event_property.event_id = user_event.id 
+                    WHERE 
+                      user_event.id in (
+                        SELECT 
+                          id 
+                        FROM 
+                          user_event 
+                        WHERE 
+                          name = '{event_name}' 
+                          AND migrated = false
+                          AND valid='true'
+                        limit 
+                          5000
+                      ) 
+                    ORDER BY 
+                      user_event.id;
+                """
+        return query
+
+    @staticmethod
+    def get_event_names(cleaned_names, generic_properties):
+        event_names_1 = [
+            event_name
+            for event_name in [
+                n
+                for n in cleaned_names
+                if n not in [gp[0] for gp in generic_properties]
+            ]
+        ]
+
+        event_names_2 = [
+            event_name
+            for event_name in [gp[0] for gp in generic_properties]
+            if event_name in cleaned_names
+        ]
+
+        return event_names_1 + event_names_2
+
+    def get_generic_properties(self, name_event: str) -> List[Tuple[Any]]:
+        try:
+            generic_properties = self.db_instance.handler(
+                query=f"""select name, count(*) from event_property where event_id in 
+                    (select id from user_event where name='{name_event}') group by name"""
+            )
+        except Exception as e:
+            raise e
+        else:
+            return generic_properties
+
+    def get_schema_properties(self, migrated_event_id):
+        try:
+            event_properties = self.db_instance.handler(
+                query=f"select * from property_event_schema where event_id={migrated_event_id};"
+            )
+        except Exception as e:
+            raise e
+        else:
+            return event_properties
+
+    def get_migrated_schemas(self) -> List[Tuple[Any]]:
+        try:
+            event_schemas = self.db_instance.handler(
+                query="SELECT * FROM event_schema WHERE db_status = 'pending_create';"
+            )
+        except Exception as e:
+            raise e
+        else:
+            return event_schemas
+
+    @staticmethod
+    def clean_name_properties(name: str) -> str:
+        name = unidecode.unidecode(
+            name.replace("|", "").replace(" ", "_").replace("__", "_")
+        )
+        return name.upper()
+
+    #########################################################################################################
 
     def get_pivot(self, event_id):
         columns = self.get_str_event_schema_properties(event_id=event_id)
@@ -73,6 +185,7 @@ class Main:
 
         return query_crostab
 
+    """
     def get_str_event_schema_properties(self, event_id: int) -> str:
         event_schemas_properties = self.get_event_schema_properties(event_id=event_id)
         if event_schemas_properties:
@@ -142,6 +255,7 @@ class Main:
             raise e
         else:
             return delete_event_query
+    """
 
 
 if __name__ == "__main__":
