@@ -10,16 +10,19 @@ from psycopg2 import extras
 import psycopg2
 
 
-class Main:
+class Migration:
     def __init__(self) -> None:
         self.db_instance = main_db.DBInstance(public_key=os.environ["DEV_BACK"])
         self.buffer = StringIO()
 
     def execute(self):
-        migrated_schemas: List[Tuple[Any]] = self.get_migrated_schemas()
+        schemas: List[Tuple[Any]] = self.get_migrated_schemas()
+        self.migrate_events(schemas=schemas)
+
+    def migrate_events(self, schemas):
         conn = self.db_instance.make_conn(data=self.db_instance.get_conn_data())
 
-        for schema in migrated_schemas:
+        for schema in schemas:
             generic_properties = self.get_generic_properties(
                 schema[1]
             )
@@ -28,21 +31,11 @@ class Main:
                 migrated_event_id=schema[0]
             )
 
-            cleaned_names: list = list(
-                map(
-                    self.clean_name_properties,
-                    [i[1] for i in schema_properties],
-                )
+            pivot = self.user_event_properties_crosstab(
+                event_name=schema[1]
             )
 
-            event_names = self.get_event_names(
-                cleaned_names=cleaned_names, generic_properties=generic_properties
-            )
 
-            for event_name in event_names:
-                events_properties = self.get_user_events_properties(
-                    event_name=event_name
-                )
             """
             try:
                 self.insert_data(data=data_insert)
@@ -256,8 +249,3 @@ class Main:
         else:
             return delete_event_query
     """
-
-
-if __name__ == "__main__":
-    main = Main()
-    main.execute()

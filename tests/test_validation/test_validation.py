@@ -1,5 +1,5 @@
 import pytest
-from actions.validation.event import validation
+from actions.event import validation
 
 
 @pytest.fixture()

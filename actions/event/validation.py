@@ -9,7 +9,7 @@ class Validation:
     def __init__(self) -> None:
         self.db_instance = main_db.DBInstance(public_key=os.environ["ELCOLOMBIANO"])
 
-    def handler(self):
+    def execute(self):
         # TODO: While Pagination
         # TODO: Normalize data format
         migrated_schemas: List[Tuple[Any]] = self.get_migrated_schemas()
@@ -149,8 +149,3 @@ class Validation:
             raise e
         else:
             return update_user_event
-
-
-if __name__ == "__main__":
-    validation = Validation()
-    validation.handler()
