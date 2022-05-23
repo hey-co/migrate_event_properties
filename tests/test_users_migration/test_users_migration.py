@@ -1,5 +1,5 @@
 import pytest
-from main.users_migration import users_migration
+from actions.migration.user import migration
 
 
 @pytest.fixture()
