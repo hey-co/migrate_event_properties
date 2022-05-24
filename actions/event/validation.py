@@ -24,24 +24,24 @@ class Validation:
 
     def validate_event(self, event_name, schema_properties):
         for user_event in self.join_user_event_properties(event_name=event_name):
-            event_properties = list(
+            properties = list(
                 filter(
                     lambda schema_property: self.clean_text(text=schema_property[1]) == user_event[2],
                     schema_properties
                 )
             )
-            if event_properties:
-                if event_properties[0][2] == "text":
+            if properties:
+                if properties[0][2] == "text":
                     if isinstance(user_event[3], str):
                         self.update_valid_user_event(event_id=user_event[1])
                     else:
                         self.update_invalid_user_event(event_id=user_event[1])
-                elif event_properties[0][2] == "numeric":
+                elif properties[0][2] == "numeric":
                     if isinstance(user_event[3], int):
                         self.update_valid_user_event(event_id=user_event[1])
                     else:
                         self.update_invalid_user_event(event_id=user_event[1])
-                elif event_properties[0][2] == "date":
+                elif properties[0][2] == "date":
                     if isinstance(user_event[3], datetime):
                         self.update_valid_user_event(event_id=user_event[1])
                     else:
