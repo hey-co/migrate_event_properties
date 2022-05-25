@@ -30,9 +30,7 @@ class Migration:
             )
             """
 
-            schema_properties = self.get_schema_properties(
-                migrated_event_id=schema[0]
-            )
+            schema_properties = self.get_schema_properties(migrated_event_id=schema[0])
 
             df_user_event_properties = self.get_data_frame(
                 data=self.join_user_event_properties(
@@ -47,11 +45,11 @@ class Migration:
                     "event_created_at",
                     "event_updated_at",
                     "event_valid",
-                    "event_user_id"
-                ]
+                    "event_user_id",
+                ],
             )
 
-            columns = "event_id integer, " + ', '.join(
+            columns = "event_id integer, " + ", ".join(
                 [f"{self.clean_text(gp[1])} varchar" for gp in schema_properties]
             )
 
@@ -59,7 +57,7 @@ class Migration:
                 "data_frame": df_user_event_properties,
                 "pivot_columns": columns,
                 "schema_name": schema[1],
-                "name_columns": [self.clean_text(gp[1]) for gp in schema_properties]
+                "name_columns": [self.clean_text(gp[1]) for gp in schema_properties],
             }
             return data
 
@@ -82,7 +80,7 @@ class Migration:
             "user_id",
             "email",
             "migrated",
-            "valid"
+            "valid",
         ] + data.get("name_columns")
 
         pivot = self.get_data_frame(data=pivot_result, columns=columns)
@@ -213,15 +211,16 @@ class Migration:
     @staticmethod
     def clean_text(text: str) -> str:
         text = unidecode.unidecode(
-            text.replace("|", "").replace(" ", "_").replace("__", "_").replace("___", "_")
+            text.replace("|", "")
+            .replace(" ", "_")
+            .replace("__", "_")
+            .replace("___", "_")
         )
         return text.upper()
 
     @staticmethod
     def get_data_frame(data: List[Tuple[Any]], columns: List[str]) -> pd.DataFrame:
-        event_properties = pd.DataFrame(
-            data, columns=columns
-        )
+        event_properties = pd.DataFrame(data, columns=columns)
         return event_properties
 
     """

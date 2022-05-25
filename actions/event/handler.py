@@ -3,12 +3,11 @@ from migration import Migration
 
 
 class EventHandler:
-
     def __init__(self):
-        self.action: str = 'validate'
+        self.action: str = "validate"
 
     def handler(self):
-        if self.action == 'validate':
+        if self.action == "validate":
             self.validate()
         else:
             self.migrate()

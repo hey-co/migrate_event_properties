@@ -20,14 +20,17 @@ class Validation:
             schema_properties = self.get_schema_properties(
                 migrated_event_id=migrated_schema[0]
             )
-            self.validate_event(event_name=migrated_schema[1], schema_properties=schema_properties)
+            self.validate_event(
+                event_name=migrated_schema[1], schema_properties=schema_properties
+            )
 
     def validate_event(self, event_name, schema_properties):
         for user_event in self.join_user_event_properties(event_name=event_name):
             properties = list(
                 filter(
-                    lambda schema_property: self.clean_text(text=schema_property[1]) == user_event[2],
-                    schema_properties
+                    lambda schema_property: self.clean_text(text=schema_property[1])
+                    == user_event[2],
+                    schema_properties,
                 )
             )
             if properties:
@@ -84,7 +87,10 @@ class Validation:
     @staticmethod
     def clean_text(text: str) -> str:
         text = unidecode.unidecode(
-            text.replace("|", "").replace(" ", "_").replace("__", "_").replace("___", "_")
+            text.replace("|", "")
+            .replace(" ", "_")
+            .replace("__", "_")
+            .replace("___", "_")
         )
         return text.upper()
 
