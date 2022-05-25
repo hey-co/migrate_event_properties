@@ -1,4 +1,4 @@
-from typing import List, Tuple, Any, Dict
+from typing import List, Tuple, Any
 from data_base import main_db
 from io import StringIO
 
@@ -7,7 +7,7 @@ import pandas as pd
 import os
 
 # from psycopg2 import extras
-# import psycopg2
+import psycopg2
 
 
 class Migration:
@@ -20,8 +20,7 @@ class Migration:
         self.migrate_events(schemas=schemas)
 
     def migrate_events(self, schemas: List[Tuple[Any]]) -> None:
-        pivot = self.build_pivot(schemas=schemas)
-        print(pivot)
+        self.__get_data(schemas=schemas)
 
     def __get_data(self, schemas):
         for schema in schemas:
@@ -60,34 +59,47 @@ class Migration:
                 "schema_name": schema[1],
                 "name_columns": [self.clean_text(gp[1]) for gp in schema_properties],
             }
-            return data
 
-    def build_pivot(self, schemas):
-        data: Dict[Any] = self.__get_data(schemas=schemas)
+            query = self.get_pivot_query(
+                columns=data.get("pivot_columns"),
+                schema_name=data.get("schema_name"),
+            )
 
-        query = self.get_pivot_query(
-            columns=data.get("pivot_columns"),
-            schema_name=data.get("schema_name"),
-        )
+            pivot_result = self.db_instance.handler(query=query)
 
-        pivot_result = self.db_instance.handler(query=query)
+            columns = [
+                "id",
+                "name",
+                "value",
+                "updated_at",
+                "created_at",
+                "user_id",
+                "email",
+                "migrated",
+                "valid",
+                "event_id",
+            ] + data.get("name_columns")
 
-        columns = [
-            "id",
-            "name",
-            "value",
-            "updated_at",
-            "created_at",
-            "user_id",
-            "email",
-            "migrated",
-            "valid",
-            "event_id",
-        ] + data.get("name_columns")
+            pivot = self.get_data_frame(data=pivot_result, columns=columns)
 
-        pivot = self.get_data_frame(data=pivot_result, columns=columns)
+            self.insert_pivot(pivot=pivot, schema_name=schema[1])
 
-        return pivot
+    def insert_pivot(self, pivot, schema_name):
+        self.save_buffer_data_frame(pivot=pivot)
+        conn = self.db_instance.make_conn(data=self.db_instance.get_conn_data())
+        try:
+            conn.cursor.copy_from(self.buffer, schema_name, sep=",")
+            conn.commit()
+        except (Exception, psycopg2.DatabaseError) as error:
+            conn.rollback()
+            conn.cursor.close()
+            raise error
+        finally:
+            conn.cursor.close()
+
+    def save_buffer_data_frame(self, pivot):
+        pivot.csv()(self.buffer(), index_label="id", header=False)
+        self.buffer().seek(0)
 
     @staticmethod
     def get_pivot_query(columns, schema_name) -> str:
