@@ -12,7 +12,7 @@ import os
 
 class Migration:
     def __init__(self) -> None:
-        self.db_instance = main_db.DBInstance(public_key=os.environ["DEV_BACK"])
+        self.db_instance = main_db.DBInstance(public_key=os.environ["ELCOLOMBIANO"])
         self.buffer = StringIO()
 
     def execute(self) -> None:
@@ -20,10 +20,9 @@ class Migration:
         self.migrate_events(schemas=schemas)
 
     def migrate_events(self, schemas: List[Tuple[Any]]) -> None:
-        data: Dict[Any] = self.__get_data(schemas=schemas)
-        self.build_pivot(data=data)
+        pivot = self.build_pivot(schemas=schemas)
 
-    def __get_data(self, schemas) -> Dict[Any]:
+    def __get_data(self, schemas):
         for schema in schemas:
             """
             generic_properties = self.get_generic_properties(
@@ -37,24 +36,58 @@ class Migration:
 
             df_user_event_properties = self.get_data_frame(
                 data=self.join_user_event_properties(
-                    event_name=schema[1]
-                )
+                    event_name=self.clean_text(text=schema[1])
+                ),
+                columns=[
+                    "property_id",
+                    "property_event_id",
+                    "property_name",
+                    "property_value",
+                    "event_name",
+                    "event_created_at",
+                    "event_updated_at",
+                    "event_valid",
+                    "event_user_id"
+                ]
             )
 
-            columns = [f"{self.clean_text(gp[1])}, {gp[2]}" for gp in schema_properties]
+            columns = "event_id integer, " + ', '.join(
+                [f"{self.clean_text(gp[1])} varchar" for gp in schema_properties]
+            )
 
             data = {
                 "data_frame": df_user_event_properties,
-                "columns": columns,
-                "schema_name": schema[1]
+                "pivot_columns": columns,
+                "schema_name": schema[1],
+                "name_columns": [self.clean_text(gp[1]) for gp in schema_properties]
             }
             return data
 
-    def build_pivot(self, data):
-        self.get_pivot_query(
+    def build_pivot(self, schemas):
+        data: Dict[Any] = self.__get_data(schemas=schemas)
+
+        query = self.get_pivot_query(
             columns=data.get("columns"),
-            schema_name=data.get("schema_name")
+            schema_name=data.get("schema_name"),
         )
+
+        pivot_result = self.db_instance.handler(query=query)
+
+        columns = [
+            "id",
+            "name",
+            "value",
+            "updated_at",
+            "created_at",
+            "user_id",
+            "email",
+            "migrated",
+            "valid"
+        ] + data.get("name_columns")
+
+        pivot = self.get_data_frame(data=pivot_result, columns=columns)
+
+        return pivot
 
     @staticmethod
     def get_pivot_query(columns, schema_name) -> str:
@@ -74,7 +107,7 @@ class Migration:
                             FROM
                               user_event
                             WHERE
-                              name = '{schema_name}'
+                              name = ''{schema_name}''
                               AND migrated = false
                             limit
                               5
@@ -185,9 +218,9 @@ class Migration:
         return text.upper()
 
     @staticmethod
-    def get_data_frame(data: List[Tuple[Any]]) -> pd.DataFrame:
+    def get_data_frame(data: List[Tuple[Any]], columns: List[str]) -> pd.DataFrame:
         event_properties = pd.DataFrame(
-            data, columns=["id", "Name", "Value"]
+            data, columns=columns
         )
         return event_properties
 

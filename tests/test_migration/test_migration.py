@@ -1,10 +1,10 @@
 import pytest
-from actions.event import Main
+from actions.event import migration
 
 
 @pytest.fixture()
 def start_main_class():
-    start = Main()
+    start = migration.Migration()
     return start
 
 
