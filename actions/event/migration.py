@@ -65,7 +65,7 @@ class Migration:
         data: Dict[Any] = self.__get_data(schemas=schemas)
 
         query = self.get_pivot_query(
-            columns=data.get("columns"),
+            columns=data.get("pivot_columns"),
             schema_name=data.get("schema_name"),
         )
 
@@ -81,8 +81,9 @@ class Migration:
             "email",
             "migrated",
             "valid",
+            "event_id"
         ] + data.get("name_columns")
-
+        
         pivot = self.get_data_frame(data=pivot_result, columns=columns)
 
         return pivot
@@ -224,16 +225,12 @@ class Migration:
         return event_properties
 
     """
-    def get_properties_ids(self, data: pd.DataFrame) -> List[int]:
-        col_one_list = data["id"].tolist()
-        return col_one_list
-
     def charge_buffer_data(self, data: pd.DataFrame) -> None:
         data.to_csv(self.buffer, index_label="id", header=False)
         self.buffer.seek(0)
 
     def insert_data(self, data: Dict[str, Any]) -> None:
-        self.charge_buffer_data(data["properties"])
+        self.charge_buffer_data(data)
         data["conn"].cursor.copy_from(self.buffer, "property_event_schema", sep=",")
         data["conn"].commit()
 
