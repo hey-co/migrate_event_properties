@@ -21,6 +21,7 @@ class Migration:
 
     def migrate_events(self, schemas: List[Tuple[Any]]) -> None:
         pivot = self.build_pivot(schemas=schemas)
+        print(pivot)
 
     def __get_data(self, schemas):
         for schema in schemas:
@@ -81,9 +82,9 @@ class Migration:
             "email",
             "migrated",
             "valid",
-            "event_id"
+            "event_id",
         ] + data.get("name_columns")
-        
+
         pivot = self.get_data_frame(data=pivot_result, columns=columns)
 
         return pivot
@@ -158,26 +159,6 @@ class Migration:
                     """
         return query
 
-        """
-            conn = self.db_instance.make_conn(data=self.db_instance.get_conn_data())
-            try:
-                self.insert_data(data=data_insert)
-            except (Exception, psycopg2.DatabaseError   ) as error:
-                logger.error(str(error))
-                conn.rollback()
-            finally:
-                query = "DELETE FROM event_properties WHERE id = '%s'"
-                extras.execute_values(
-                    conn.cursor, query.as_string(conn.cursor), properties_ids
-                )
-                conn.commit()
-
-                delete_event = self.delete_event(
-                    event_id=self.get_event_id(name=schema[1])
-                )
-                conn.cursor.close()
-            """
-
     def get_generic_properties(self, name_event: str) -> List[Tuple[Any]]:
         try:
             generic_properties = self.db_instance.handler(
@@ -223,24 +204,3 @@ class Migration:
     def get_data_frame(data: List[Tuple[Any]], columns: List[str]) -> pd.DataFrame:
         event_properties = pd.DataFrame(data, columns=columns)
         return event_properties
-
-    """
-    def charge_buffer_data(self, data: pd.DataFrame) -> None:
-        data.to_csv(self.buffer, index_label="id", header=False)
-        self.buffer.seek(0)
-
-    def insert_data(self, data: Dict[str, Any]) -> None:
-        self.charge_buffer_data(data)
-        data["conn"].cursor.copy_from(self.buffer, "property_event_schema", sep=",")
-        data["conn"].commit()
-
-    def delete_event(self, event_id: int) -> List[Tuple[Any]]:
-        try:
-            delete_event_query = self.db_instance.handler(
-                query=f"DELETE FROM user_event WHERE event_id='{event_id}';"
-            )
-        except Exception as e:
-            raise e
-        else:
-            return delete_event_query
-    """
