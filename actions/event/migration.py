@@ -20,9 +20,6 @@ class Migration:
         self.migrate_events(schemas=schemas)
 
     def migrate_events(self, schemas: List[Tuple[Any]]) -> None:
-        self.__get_data(schemas=schemas)
-
-    def __get_data(self, schemas):
         for schema in schemas:
             """
             generic_properties = self.get_generic_properties(
@@ -48,6 +45,8 @@ class Migration:
                     "event_user_id",
                 ],
             )
+
+            event_ids = df_user_event_properties["property_event_id"].tolist()
 
             columns = "event_id integer, " + ", ".join(
                 [f"{self.clean_text(gp[1])} varchar" for gp in schema_properties]
@@ -82,10 +81,11 @@ class Migration:
 
             pivot = self.get_data_frame(data=pivot_result, columns=columns)
 
-            self.insert_pivot(pivot=pivot, schema_name=schema[1])
+            self.insert_pivot(pivot=pivot, schema_name=schema[1], event_ids=event_ids)
 
-    def insert_pivot(self, pivot, schema_name):
+    def insert_pivot(self, pivot, schema_name, event_ids):
         self.save_buffer_data_frame(pivot=pivot)
+        """
         conn = self.db_instance.make_conn(data=self.db_instance.get_conn_data())
         try:
             conn.cursor.copy_from(self.buffer, schema_name, sep=",")
@@ -96,10 +96,21 @@ class Migration:
             raise error
         finally:
             conn.cursor.close()
+            self.update_user_events_migrated(event_ids=event_ids)
+        """
+
+    def update_user_events_migrated(self, event_ids):
+        for event_id in event_ids:
+            try:
+                self.db_instance.handler(query=f"""UPDATE user_event SET migrated=true WHERE id={event_id};""")
+            except Exception as e:
+                raise e
+            else:
+                continue
 
     def save_buffer_data_frame(self, pivot):
-        pivot.csv()(self.buffer(), index_label="id", header=False)
-        self.buffer().seek(0)
+        pivot.to_csv(self.buffer, index_label="id", header=False)
+        self.buffer.seek(0)
 
     @staticmethod
     def get_pivot_query(columns, schema_name) -> str:
