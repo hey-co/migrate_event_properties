@@ -1,19 +1,15 @@
 from typing import List, Tuple, Any
 from data_base import main_db
-from io import StringIO
+from sqlalchemy import create_engine
 
 import unidecode
 import pandas as pd
-import os
-
-# from psycopg2 import extras
 import psycopg2
 
 
 class Migration:
     def __init__(self) -> None:
-        self.db_instance = main_db.DBInstance(public_key=os.environ["ELCOLOMBIANO"])
-        self.buffer = StringIO()
+        self.db_instance = main_db.DBInstance(public_key="kKS0DfTKpE8TqUZs")
 
     def execute(self) -> None:
         schemas: List[Tuple[Any]] = self.get_migrated_schemas()
@@ -21,12 +17,6 @@ class Migration:
 
     def migrate_events(self, schemas: List[Tuple[Any]]) -> None:
         for schema in schemas:
-            """
-            generic_properties = self.get_generic_properties(
-                schema[1]
-            )
-            """
-
             schema_properties = self.get_schema_properties(migrated_event_id=schema[0])
 
             df_user_event_properties = self.get_data_frame(
@@ -68,76 +58,85 @@ class Migration:
 
             columns = [
                 "id",
-                "name",
-                "value",
-                "updated_at",
-                "created_at",
-                "user_id",
-                "email",
-                "migrated",
-                "valid",
-                "event_id",
             ] + data.get("name_columns")
 
             pivot = self.get_data_frame(data=pivot_result, columns=columns)
+            self.insert_pivot(pivot=pivot, schema_name=schema[1])
+            self.update_events(event_ids=event_ids)
 
-            self.insert_pivot(pivot=pivot, schema_name=schema[1], event_ids=event_ids)
+    def update_events(self, event_ids):
+        pass
 
-    def insert_pivot(self, pivot, schema_name, event_ids):
-        self.save_buffer_data_frame(pivot=pivot)
-        """
-        conn = self.db_instance.make_conn(data=self.db_instance.get_conn_data())
-        try:
-            conn.cursor.copy_from(self.buffer, schema_name, sep=",")
-            conn.commit()
-        except (Exception, psycopg2.DatabaseError) as error:
-            conn.rollback()
-            conn.cursor.close()
-            raise error
-        finally:
-            conn.cursor.close()
-            self.update_user_events_migrated(event_ids=event_ids)
-        """
+    @staticmethod
+    def insert_pivot(pivot, schema_name):
+
+        conn_string = "postgresql://postgres:*123@127.0.0.1/Testing"
+
+        db = create_engine(conn_string)
+
+        conn = db.connect()
+
+        conn1 = psycopg2.connect(
+            database="Testing",
+            user="postgres",
+            password="*123",
+            host="127.0.0.1",
+            port="5432",
+        )
+
+        conn1.autocommit = True
+        cursor = conn1.cursor()
+
+        pivot_lists = list(pivot.columns.values)
+
+        data = pivot.to_csv("insert_testing.csv", index=False)
+
+        data = data[pivot_lists]
+
+        data.to_sql(schema_name, conn, if_exists="replace")
+
+        sql1 = """select * from books;"""
+        cursor.execute(sql1)
+
+        conn1.commit()
+        conn1.close()
 
     def update_user_events_migrated(self, event_ids):
         for event_id in event_ids:
             try:
-                self.db_instance.handler(query=f"""UPDATE user_event SET migrated=true WHERE id={event_id};""")
+                self.db_instance.handler(
+                    query=f"""UPDATE user_event SET migrated=true WHERE id={event_id};"""
+                )
             except Exception as e:
                 raise e
             else:
                 continue
 
-    def save_buffer_data_frame(self, pivot):
-        pivot.to_csv(self.buffer, index_label="id", header=False)
-        self.buffer.seek(0)
-
     @staticmethod
     def get_pivot_query(columns, schema_name) -> str:
-        query = f"""select * from user_event join (SELECT *
+        query = f"""SELECT *
                     FROM crosstab('
+                    SELECT
+                        user_event.id,
+                        event_property.name,
+                        event_property.value
+                    FROM
+                        event_property
+                        INNER JOIN user_event ON event_property.event_id = user_event.id
+                    WHERE
+                        user_event.id in (
                         SELECT
-                          user_event.id,
-                          event_property.name,
-                          event_property.value
+                            id
                         FROM
-                          event_property
-                          INNER JOIN user_event ON event_property.event_id = user_event.id
+                            user_event
                         WHERE
-                          user_event.id in (
-                            SELECT
-                              id
-                            FROM
-                              user_event
-                            WHERE
-                              name = ''{schema_name}''
-                              AND migrated = false
-                            limit
-                              5
-                          )
-                        ORDER BY
-                          user_event.id') as ct({columns})
-                ) as prop on user_event.id=prop.event_id"""
+                            name = ''{schema_name}''
+                            AND migrated = false
+                        limit
+                            5
+                        )
+                    ORDER BY
+                        user_event.id') as ct({columns})"""
         return query
 
     def join_user_event_properties(self, event_name):
@@ -206,7 +205,7 @@ class Migration:
     def get_migrated_schemas(self) -> List[Tuple[Any]]:
         try:
             event_schemas = self.db_instance.handler(
-                query="SELECT * FROM event_schema WHERE db_status = 'pending_create';"
+                query="SELECT * FROM event_schema WHERE db_status='pending_create' and name='NAV_DMP';"
             )
         except Exception as e:
             raise e
