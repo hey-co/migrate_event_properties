@@ -11,7 +11,6 @@ class Validation:
 
     def execute(self):
         # TODO: While Pagination
-        # TODO: Normalize data format
         migrated_schemas: List[Tuple[Any]] = self.get_migrated_schemas()
         self.validate_events(migrated_schemas=migrated_schemas)
 
@@ -92,7 +91,7 @@ class Validation:
             .replace("__", "_")
             .replace("___", "_")
         )
-        return text.upper()
+        return text.lower()
 
     def join_user_event_properties(self, event_name):
         try:

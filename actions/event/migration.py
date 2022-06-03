@@ -5,11 +5,14 @@ from sqlalchemy import create_engine
 import unidecode
 import pandas as pd
 import psycopg2
+import os
 
 
 class Migration:
     def __init__(self) -> None:
-        self.db_instance = main_db.DBInstance(public_key="kKS0DfTKpE8TqUZs")
+        self.db_instance = main_db.DBInstance(
+            public_key=os.environ["CLIENT_PUBLIC_KEY"]
+        )
 
     def execute(self) -> None:
         schemas: List[Tuple[Any]] = self.get_migrated_schemas()
@@ -17,23 +20,15 @@ class Migration:
 
     def migrate_events(self, schemas: List[Tuple[Any]]) -> None:
         for schema in schemas:
-            schema_properties = self.get_schema_properties(migrated_event_id=schema[0])
+            schema_properties = self.get_schema_properties(
+                migrated_event_id=schema[0]
+            )
 
             df_user_event_properties = self.get_data_frame(
                 data=self.join_user_event_properties(
                     event_name=self.clean_text(text=schema[1])
                 ),
-                columns=[
-                    "property_id",
-                    "property_event_id",
-                    "property_name",
-                    "property_value",
-                    "event_name",
-                    "event_created_at",
-                    "event_updated_at",
-                    "event_valid",
-                    "event_user_id",
-                ],
+                columns=self.get_event_properties_columns(),
             )
 
             event_ids = df_user_event_properties["property_event_id"].tolist()
@@ -49,57 +44,84 @@ class Migration:
                 "name_columns": [self.clean_text(gp[1]) for gp in schema_properties],
             }
 
-            query = self.get_pivot_query(
-                columns=data.get("pivot_columns"),
-                schema_name=data.get("schema_name"),
+            pivot = self.get_data_frame(
+                data=self.db_instance.handler(
+                    query=self.get_pivot_query(
+                        columns=data.get("pivot_columns"),
+                        schema_name=data.get("schema_name"),
+                    )
+                ),
+                columns=self.get_basic_pivot_columns() + data.get("name_columns"),
             )
 
-            pivot_result = self.db_instance.handler(query=query)
+            pivot.drop(self.get_delete_pivot_columns(), axis=1, inplace=True)
 
-            columns = [
-                "id",
-            ] + data.get("name_columns")
-
-            pivot = self.get_data_frame(data=pivot_result, columns=columns)
-            self.insert_pivot(pivot=pivot, schema_name=schema[1])
+            self.insert_pivot(pivot=pivot, schema_name=self.clean_text(text=schema[1]))
             self.update_events(event_ids=event_ids)
+
+    @staticmethod
+    def get_event_properties_columns() -> List[str]:
+        return [
+            "property_id",
+            "property_event_id",
+            "property_name",
+            "property_value",
+            "event_name",
+            "event_created_at",
+            "event_updated_at",
+            "event_valid",
+            "event_user_id",
+        ]
+
+    @staticmethod
+    def get_basic_pivot_columns() -> List[str]:
+        return [
+            "id",
+            "name",
+            "value",
+            "updated_at",
+            "created_at",
+            "user_id",
+            "email",
+            "migrated",
+            "valid",
+            "event_id",
+        ]
+
+    @staticmethod
+    def get_delete_pivot_columns() -> List[str]:
+        return ["name", "value", "email", "migrated", "valid", "event_id"]
 
     def update_events(self, event_ids):
         pass
 
-    @staticmethod
-    def insert_pivot(pivot, schema_name):
+    def insert_pivot(self, pivot, schema_name):
 
-        conn_string = "postgresql://postgres:*123@127.0.0.1/Testing"
-
-        db = create_engine(conn_string)
-
-        conn = db.connect()
+        conn = create_engine(self.get_str_conn()).connect()
 
         conn1 = psycopg2.connect(
-            database="Testing",
-            user="postgres",
-            password="*123",
-            host="127.0.0.1",
-            port="5432",
+            database=os.environ["NAME_DB"],
+            user=os.environ["TENANT_USER_DB"],
+            password=os.environ["PASSWORD_DB"],
+            host=os.environ["HOST_NAME_DB"],
+            port=os.environ["PORT_DB"],
         )
 
         conn1.autocommit = True
-        cursor = conn1.cursor()
+        pivot.fillna(1)
 
-        pivot_lists = list(pivot.columns.values)
-
-        data = pivot.to_csv("insert_testing.csv", index=False)
-
-        data = data[pivot_lists]
-
-        data.to_sql(schema_name, conn, if_exists="replace")
-
-        sql1 = """select * from books;"""
-        cursor.execute(sql1)
-
+        pivot.to_sql(schema_name, conn, if_exists="append", index=False)
         conn1.commit()
         conn1.close()
+
+    @staticmethod
+    def get_str_conn():
+        user = os.environ["TENANT_USER_DB"]
+        password = os.environ["PASSWORD_DB"]
+        host = os.environ["HOST_NAME_DB"]
+        name = os.environ["NAME_DB"]
+        conn_string = f"postgresql://{user}:{password}@{host}/{name}"
+        return conn_string
 
     def update_user_events_migrated(self, event_ids):
         for event_id in event_ids:
@@ -114,29 +136,32 @@ class Migration:
 
     @staticmethod
     def get_pivot_query(columns, schema_name) -> str:
-        query = f"""SELECT *
-                    FROM crosstab('
+        query = f"""
+            SELECT * FROM user_event JOIN (SELECT *
+            FROM crosstab('
+                SELECT
+                  user_event.id,
+                  event_property.name,
+                  event_property.value
+                FROM
+                  event_property
+                  INNER JOIN user_event ON event_property.event_id = user_event.id
+                WHERE
+                  user_event.id in (
                     SELECT
-                        user_event.id,
-                        event_property.name,
-                        event_property.value
+                      id
                     FROM
-                        event_property
-                        INNER JOIN user_event ON event_property.event_id = user_event.id
+                      user_event
                     WHERE
-                        user_event.id in (
-                        SELECT
-                            id
-                        FROM
-                            user_event
-                        WHERE
-                            name = ''{schema_name}''
-                            AND migrated = false
-                        limit
-                            5
-                        )
-                    ORDER BY
-                        user_event.id') as ct({columns})"""
+                      name = ''{schema_name}''
+                      AND migrated = false
+                    limit
+                      5
+                  )
+                ORDER BY
+                  user_event.id') as ct({columns})
+            ) as prop on user_event.id=prop.event_id
+        """
         return query
 
     def join_user_event_properties(self, event_name):
@@ -151,34 +176,35 @@ class Migration:
 
     @staticmethod
     def get_join_user_event_properties_query(event_name):
-        query = f"""SELECT 
-                          event_property.id, 
-                          event_property.event_id, 
-                          event_property.name, 
-                          event_property.value, 
-                          user_event.name, 
-                          user_event.created_at, 
-                          user_event.updated_at, 
-                          user_event.valid, 
-                          user_event.user_id 
-                        FROM 
-                          event_property 
-                          INNER JOIN user_event ON event_property.event_id = user_event.id 
-                        WHERE 
-                          user_event.id in (
-                            SELECT 
-                              id 
-                            FROM 
-                              user_event 
-                            WHERE 
-                              name = '{event_name}' 
-                              AND migrated = false 
-                            limit 
-                              5000
-                          ) 
-                        ORDER BY 
-                          user_event.id;
-                    """
+        query = f"""
+            SELECT 
+                event_property.id, 
+                event_property.event_id, 
+                event_property.name, 
+                event_property.value, 
+                user_event.name, 
+                user_event.created_at, 
+                user_event.updated_at, 
+                user_event.valid, 
+                user_event.user_id 
+            FROM 
+                event_property 
+                INNER JOIN user_event ON event_property.event_id = user_event.id 
+            WHERE 
+                user_event.id in (
+                    SELECT 
+                      id 
+                    FROM 
+                      user_event 
+                    WHERE 
+                      name = '{event_name}' 
+                      AND migrated = false 
+                    limit 
+                      5000
+                ) 
+            ORDER BY
+              user_event.id;
+        """
         return query
 
     def get_generic_properties(self, name_event: str) -> List[Tuple[Any]]:
@@ -220,7 +246,7 @@ class Migration:
             .replace("__", "_")
             .replace("___", "_")
         )
-        return text.upper()
+        return text.lower()
 
     @staticmethod
     def get_data_frame(data: List[Tuple[Any]], columns: List[str]) -> pd.DataFrame:

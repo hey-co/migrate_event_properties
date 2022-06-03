@@ -25,8 +25,8 @@ class DBInstance:
         tanants_conn_data = {
             "db_name": os.environ["TENANT_NAME_DB"],
             "db_user": os.environ["TENANT_USER_DB"],
-            "db_host": os.environ["TENANT_HOST_DB"],
-            "db_password": os.environ["TENANT_PASSWORD_DB"],
+            "db_host": os.environ["HOST_NAME_DB"],
+            "db_password": os.environ["PASSWORD_DB"],
         }
 
         conn = self.make_conn(data=tanants_conn_data)
@@ -42,8 +42,8 @@ class DBInstance:
                     conn_data = {
                         "db_name": tenant[1],
                         "db_user": tenant[2],
-                        "db_host": tenant[3],
-                        "db_password": tenant[4],
+                        "db_host": os.environ["HOST_NAME_DB"],
+                        "db_password": os.environ["PASSWORD_DB"]
                     }
         return conn_data
 
