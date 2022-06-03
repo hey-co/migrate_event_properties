@@ -1,4 +1,4 @@
-from typing import List, Tuple, Any
+from typing import List, Tuple, Dict, Any
 from data_base import main_db
 from sqlalchemy import create_engine
 
@@ -20,44 +20,65 @@ class Migration:
 
     def migrate_events(self, schemas: List[Tuple[Any]]) -> None:
         for schema in schemas:
-            schema_properties = self.get_schema_properties(
-                migrated_event_id=schema[0]
+            schema_properties = self.get_schema_properties(migrated_event_id=schema[0])
+
+            df_event_properties = self.df_event_properties(schema_name=schema[0])
+
+            data = self.get_pivot_data(
+                df_event_properties=df_event_properties,
+                schema_properties=schema_properties,
+                schema_name=schema[1],
             )
 
-            df_user_event_properties = self.get_data_frame(
-                data=self.join_user_event_properties(
-                    event_name=self.clean_text(text=schema[1])
-                ),
-                columns=self.get_event_properties_columns(),
+            self.insert_pivot(
+                pivot=self.get_pivot_insert(data=data),
+                schema_name=self.clean_text(text=schema[1]),
             )
 
-            event_ids = df_user_event_properties["property_event_id"].tolist()
-
-            columns = "event_id integer, " + ", ".join(
-                [f"{self.clean_text(gp[1])} varchar" for gp in schema_properties]
+            self.update_user_events_migrated(
+                event_ids=df_event_properties["property_event_id"].tolist()
             )
 
-            data = {
-                "data_frame": df_user_event_properties,
-                "pivot_columns": columns,
-                "schema_name": schema[1],
-                "name_columns": [self.clean_text(gp[1]) for gp in schema_properties],
-            }
+    def get_pivot_insert(self, data: Dict[str, Any]) -> pd.DataFrame:
+        pivot = self.get_data_frame(
+            data=self.db_instance.handler(
+                query=self.get_pivot_query(
+                    columns=data.get("pivot_columns"),
+                    schema_name=data.get("schema_name"),
+                )
+            ),
+            columns=self.get_basic_pivot_columns() + data.get("name_columns"),
+        )
+        pivot.drop(self.get_delete_pivot_columns(), axis=1, inplace=True)
+        return pivot
 
-            pivot = self.get_data_frame(
-                data=self.db_instance.handler(
-                    query=self.get_pivot_query(
-                        columns=data.get("pivot_columns"),
-                        schema_name=data.get("schema_name"),
-                    )
-                ),
-                columns=self.get_basic_pivot_columns() + data.get("name_columns"),
-            )
+    def df_event_properties(self, schema_name: str) -> pd.DataFrame:
+        df_event_properties = self.get_data_frame(
+            data=self.join_user_event_properties(
+                event_name=self.clean_text(text=schema_name)
+            ),
+            columns=self.get_event_properties_columns(),
+        )
+        return df_event_properties
 
-            pivot.drop(self.get_delete_pivot_columns(), axis=1, inplace=True)
+    def get_pivot_data(
+        self, df_event_properties, schema_properties, schema_name
+    ) -> Dict[str, Any]:
+        data = {
+            "data_frame": df_event_properties,
+            "pivot_columns": self.get_pivot_columns(
+                schema_properties=schema_properties
+            ),
+            "schema_name": schema_name,
+            "name_columns": [self.clean_text(gp[1]) for gp in schema_properties],
+        }
+        return data
 
-            self.insert_pivot(pivot=pivot, schema_name=self.clean_text(text=schema[1]))
-            self.update_events(event_ids=event_ids)
+    def get_pivot_columns(self, schema_properties) -> str:
+        columns = "event_id integer, " + ", ".join(
+            [f"{self.clean_text(gp[1])} varchar" for gp in schema_properties]
+        )
+        return columns
 
     @staticmethod
     def get_event_properties_columns() -> List[str]:
@@ -92,27 +113,27 @@ class Migration:
     def get_delete_pivot_columns() -> List[str]:
         return ["name", "value", "email", "migrated", "valid", "event_id"]
 
-    def update_events(self, event_ids):
-        pass
-
-    def insert_pivot(self, pivot, schema_name):
-
+    def insert_pivot(self, pivot: pd.DataFrame, schema_name: str):
         conn = create_engine(self.get_str_conn()).connect()
 
-        conn1 = psycopg2.connect(
+        conn1 = self.get_insert_conn()
+
+        pivot.to_sql(schema_name, conn, if_exists="append", index=False)
+
+        conn1.commit()
+        conn1.close()
+
+    @staticmethod
+    def get_insert_conn():
+        conn = psycopg2.connect(
             database=os.environ["NAME_DB"],
             user=os.environ["TENANT_USER_DB"],
             password=os.environ["PASSWORD_DB"],
             host=os.environ["HOST_NAME_DB"],
             port=os.environ["PORT_DB"],
         )
-
-        conn1.autocommit = True
-        pivot.fillna(1)
-
-        pivot.to_sql(schema_name, conn, if_exists="append", index=False)
-        conn1.commit()
-        conn1.close()
+        conn.autocommit = True
+        return conn
 
     @staticmethod
     def get_str_conn():
@@ -135,7 +156,7 @@ class Migration:
                 continue
 
     @staticmethod
-    def get_pivot_query(columns, schema_name) -> str:
+    def get_pivot_query(columns, schema_name: str) -> str:
         query = f"""
             SELECT * FROM user_event JOIN (SELECT *
             FROM crosstab('
@@ -164,7 +185,7 @@ class Migration:
         """
         return query
 
-    def join_user_event_properties(self, event_name):
+    def join_user_event_properties(self, event_name: str):
         try:
             user_events_properties = self.db_instance.handler(
                 query=self.get_join_user_event_properties_query(event_name=event_name)
@@ -175,7 +196,7 @@ class Migration:
             return user_events_properties
 
     @staticmethod
-    def get_join_user_event_properties_query(event_name):
+    def get_join_user_event_properties_query(event_name: str):
         query = f"""
             SELECT 
                 event_property.id, 
@@ -218,7 +239,7 @@ class Migration:
         else:
             return generic_properties
 
-    def get_schema_properties(self, migrated_event_id):
+    def get_schema_properties(self, migrated_event_id: int):
         try:
             event_properties = self.db_instance.handler(
                 query=f"select * from property_event_schema where event_id={migrated_event_id};"
