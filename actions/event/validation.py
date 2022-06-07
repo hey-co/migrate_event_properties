@@ -7,7 +7,7 @@ import unidecode
 
 class Validation:
     def __init__(self) -> None:
-        self.db_instance = main_db.DBInstance(public_key=os.environ["ELCOLOMBIANO"])
+        self.db_instance = main_db.DBInstance(public_key="kKS0DfTKpE8TqUZs")
 
     def execute(self):
         # TODO: While Pagination
@@ -24,38 +24,41 @@ class Validation:
             )
 
     def validate_event(self, event_name, schema_properties):
-        for user_event in self.join_user_event_properties(event_name=event_name):
+        for event_property in self.join_user_event_properties(event_name=event_name):
             properties = list(
                 filter(
-                    lambda schema_property: self.clean_text(text=schema_property[1])
-                    == user_event[2],
+                    lambda schema_property: self.clean_text(text=schema_property[1]) == self.clean_text(
+                        text=event_property[2]),
                     schema_properties,
                 )
             )
             if properties:
                 if properties[0][2] == "text":
-                    if isinstance(user_event[3], str):
-                        self.update_valid_user_event(event_id=user_event[1])
+                    if isinstance(event_property[3], str):
+                        self.update_valid_user_event(event_id=event_property[1])
                     else:
-                        self.update_invalid_user_event(event_id=user_event[1])
+                        self.update_invalid_user_event(event_id=event_property[1])
+                        break
                 elif properties[0][2] == "numeric":
-                    if isinstance(user_event[3], int):
-                        self.update_valid_user_event(event_id=user_event[1])
+                    if isinstance(event_property[3], int):
+                        self.update_valid_user_event(event_id=event_property[1])
                     else:
-                        self.update_invalid_user_event(event_id=user_event[1])
+                        self.update_invalid_user_event(event_id=event_property[1])
+                        break
                 elif properties[0][2] == "date":
-                    if isinstance(user_event[3], datetime):
-                        self.update_valid_user_event(event_id=user_event[1])
+                    if isinstance(event_property[3], datetime):
+                        self.update_valid_user_event(event_id=event_property[1])
                     else:
-                        self.update_invalid_user_event(event_id=user_event[1])
+                        self.update_invalid_user_event(event_id=event_property[1])
+                        break
             else:
-
-                continue
+                self.update_invalid_user_event(event_id=event_property[1])
+                break
 
     def get_migrated_schemas(self) -> List[Tuple[Any]]:
         try:
             event_schemas = self.db_instance.handler(
-                query="SELECT * FROM event_schema WHERE db_status = 'pending_create';"
+                query="SELECT * FROM event_schema WHERE db_status = 'pending_create' AND name='SGC_SPEC';"
             )
         except Exception as e:
             raise e
@@ -91,7 +94,7 @@ class Validation:
             .replace("__", "_")
             .replace("___", "_")
         )
-        return text.lower()
+        return text.upper()
 
     def join_user_event_properties(self, event_name):
         try:
@@ -128,7 +131,7 @@ class Validation:
                               name = '{event_name}' 
                               AND migrated = false 
                             limit 
-                              5000
+                              100
                           ) 
                         ORDER BY 
                           user_event.id;
@@ -138,7 +141,7 @@ class Validation:
     def update_invalid_user_event(self, event_id):
         try:
             update_user_event = self.db_instance.handler(
-                query=f"UPDATE user_event SET valid ='unvalid', WHERE id={event_id};"
+                query=f"UPDATE user_event SET valid ='unvalid' WHERE id={event_id};"
             )
         except Exception as e:
             raise e
@@ -148,9 +151,14 @@ class Validation:
     def update_valid_user_event(self, event_id):
         try:
             update_user_event = self.db_instance.handler(
-                query=f"UPDATE user_event SET valid ='validated', WHERE id={event_id};"
+                query=f"UPDATE user_event SET valid ='validated' WHERE id={event_id};"
             )
         except Exception as e:
             raise e
         else:
             return update_user_event
+
+
+if __name__ == "__main__":
+    validation = Validation()
+    print(validation.execute())

@@ -10,9 +10,7 @@ import os
 
 class Migration:
     def __init__(self) -> None:
-        self.db_instance = main_db.DBInstance(
-            public_key=os.environ["CLIENT_PUBLIC_KEY"]
-        )
+        self.db_instance = main_db.DBInstance(public_key="kKS0DfTKpE8TqUZs")
 
     def execute(self) -> None:
         schemas: List[Tuple[Any]] = self.get_migrated_schemas()
@@ -22,7 +20,7 @@ class Migration:
         for schema in schemas:
             schema_properties = self.get_schema_properties(migrated_event_id=schema[0])
 
-            df_event_properties = self.df_event_properties(schema_name=schema[0])
+            df_event_properties = self.df_event_properties(schema_name=schema[1])
 
             data = self.get_pivot_data(
                 df_event_properties=df_event_properties,
@@ -126,21 +124,21 @@ class Migration:
     @staticmethod
     def get_insert_conn():
         conn = psycopg2.connect(
-            database=os.environ["NAME_DB"],
-            user=os.environ["TENANT_USER_DB"],
-            password=os.environ["PASSWORD_DB"],
-            host=os.environ["HOST_NAME_DB"],
-            port=os.environ["PORT_DB"],
+            database="hey_elcolombiano",
+            user="maiq",
+            password="DevInstanceHey$",
+            host="test-events-migration.csry9lg2mjjk.us-east-1.rds.amazonaws.com",
+            port="5432",
         )
         conn.autocommit = True
         return conn
 
     @staticmethod
     def get_str_conn():
-        user = os.environ["TENANT_USER_DB"]
-        password = os.environ["PASSWORD_DB"]
-        host = os.environ["HOST_NAME_DB"]
-        name = os.environ["NAME_DB"]
+        user = "maiq"
+        password = "DevInstanceHey$"
+        host = "test-events-migration.csry9lg2mjjk.us-east-1.rds.amazonaws.com"
+        name = "hey_elcolombiano"
         conn_string = f"postgresql://{user}:{password}@{host}/{name}"
         return conn_string
 
@@ -176,8 +174,9 @@ class Migration:
                     WHERE
                       name = ''{schema_name}''
                       AND migrated = false
+                      AND valid = ''validated''
                     limit
-                      5
+                      1
                   )
                 ORDER BY
                   user_event.id') as ct({columns})
@@ -219,9 +218,10 @@ class Migration:
                       user_event 
                     WHERE 
                       name = '{event_name}' 
-                      AND migrated = false 
+                      AND migrated = false
+                      AND valid = 'validated'
                     limit 
-                      5000
+                      1
                 ) 
             ORDER BY
               user_event.id;
@@ -252,7 +252,7 @@ class Migration:
     def get_migrated_schemas(self) -> List[Tuple[Any]]:
         try:
             event_schemas = self.db_instance.handler(
-                query="SELECT * FROM event_schema WHERE db_status='pending_create' and name='NAV_DMP';"
+                query="SELECT * FROM event_schema WHERE db_status='pending_create' and name='SGC_SPEC';"
             )
         except Exception as e:
             raise e

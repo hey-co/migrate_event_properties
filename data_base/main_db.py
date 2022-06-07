@@ -15,7 +15,7 @@ class DBInstance:
         return result
 
     def decrypt_fernet(self, token):
-        key = os.environ["FERNET_KEY"]
+        key = "1eseMybb_3ukR1nsPEJ7_DQwHLsU8uYfezu5E_MUS2E="
         return Fernet(key).decrypt(token.encode()).decode()
 
     def get_tenants(self):
@@ -23,10 +23,10 @@ class DBInstance:
         t.db_host, t.db_password, t.db_port, t.db_host_for_reading FROM tenant as t;"""
 
         tanants_conn_data = {
-            "db_name": os.environ["TENANT_NAME_DB"],
-            "db_user": os.environ["TENANT_USER_DB"],
-            "db_host": os.environ["HOST_NAME_DB"],
-            "db_password": os.environ["PASSWORD_DB"],
+            "db_name": "hey_sdk",
+            "db_user": "maiq",
+            "db_host": "test-events-migration.csry9lg2mjjk.us-east-1.rds.amazonaws.com",
+            "db_password": "DevInstanceHey$",
         }
 
         conn = self.make_conn(data=tanants_conn_data)
@@ -40,10 +40,10 @@ class DBInstance:
             if tenant[0]:
                 if self.public_key == self.decrypt_fernet(tenant[0]):
                     conn_data = {
-                        "db_name": tenant[1],
-                        "db_user": tenant[2],
-                        "db_host": os.environ["HOST_NAME_DB"],
-                        "db_password": os.environ["PASSWORD_DB"]
+                        "db_name": "hey_elcolombiano",
+                        "db_user": "maiq",
+                        "db_host": "test-events-migration.csry9lg2mjjk.us-east-1.rds.amazonaws.com",
+                        "db_password": "DevInstanceHey$"
                     }
         return conn_data
 
