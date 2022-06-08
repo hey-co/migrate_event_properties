@@ -94,7 +94,7 @@ class Validation:
             .replace("__", "_")
             .replace("___", "_")
         )
-        return text.upper()
+        return text.lower()
 
     def join_user_event_properties(self, event_name):
         try:
