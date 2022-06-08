@@ -6,7 +6,7 @@ import unidecode
 class Table:
     def __init__(self, name: str, db_name: str):
         self.name = self.clean_name(name=name)
-        self.conn = main_db.DBInstance(db_name=db_name)
+        self.conn = main_db.DBInstance(public_key="kKS0DfTKpE8TqUZs")
 
     def build_table(self) -> str:
         if self.validate_table():
