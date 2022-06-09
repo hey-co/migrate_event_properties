@@ -11,8 +11,7 @@ class Validation:
 
     def execute(self):
         migrated_schemas: List[Tuple[Any]] = self.__get_migrated_schemas()
-        print(migrated_schemas)
-        #self.validate_events(migrated_schemas=migrated_schemas)
+        self.validate_events(migrated_schemas=migrated_schemas)
 
     def __get_migrated_schemas(self) -> List[Tuple[Any]]:
         with self.db_conn.cursor() as curs:
@@ -26,13 +25,13 @@ class Validation:
         self.db_conn.close()
 
     def __validate_event(self, schema):
-        for event in self.__get_user_events(event_name=schema[1]):
-            for event_property in self.__event_properties(event_id=event[0]):
-                schema_property = self.__get_schema_property(event_property[1])
+        for event in self.__get_events(event_name=schema[1]):
+            for event_property in self.__get_event_properties(event_id=event[0]):
+                schema_property = self.__get_schema_property(property_name=event_property[1])
                 if schema_property[2] == "text":
                     try:
                         cast = str(event_property[2])
-                    except:
+                    except ValueError:
                         self.update_invalid_user_event(event_id=event_property[1])
                         break
                     else:
@@ -42,7 +41,7 @@ class Validation:
                 elif schema_property[2] == "numeric":
                     try:
                         cast = int(event_property[2])
-                    except:
+                    except ValueError:
                         self.update_invalid_user_event(event_id=event_property[1])
                         break
                     else:
@@ -52,101 +51,56 @@ class Validation:
                 elif schema_property[2] == "date":
                     try:
                         cast = datetime.strptime(event_property[2], '%d/%m/%y')
-                    except:
+                    except ValueError:
                         self.update_invalid_user_event(event_id=event_property[1])
                         break
                     else:
                         if isinstance(cast, datetime):
                             self.update_valid_user_event(event_id=event_property[1])
 
-    def __get_user_events(self):
+    def __get_events(self, event_name):
         with self.db_conn.cursor() as curs:
-            curs.execute("")
+            curs.execute(f"""
+                SELECT 
+                    * 
+                FROM 
+                    user_event 
+                WHERE name = '{event_name}' AND migrated = false 
+                LIMIT 100;
+            """)
+            return [line for line in curs.fetchall()]
 
+    def __get_event_properties(self, event_id: int) -> List[Tuple[Any]]:
+        with self.db_conn.cursor() as curs:
+            curs.execute(f"""
+                SELECT 
+                    * 
+                FROM 
+                    event_property 
+                WHERE event_id = {event_id};
+            """)
+            return [line for line in curs.fetchall()]
 
+    def __get_schema_property(self, property_name: str) -> Tuple[Any]:
+        with self.db_conn.cursor() as curs:
+            curs.execute(f"""
+                SELECT 
+                    * 
+                FROM 
+                    property_event_schema
+                WHERE name = '{property_name}';
+            """)
+            return curs.fetchone()
 
-    def get_generic_properties(self, name_event: str) -> List[Tuple[Any]]:
-        try:
-            generic_properties = self.db_instance.handler(
-                query=f"""select name, count(*) from event_property where event_id in 
-                    (select id from user_event where name='{name_event}') group by name"""
-            )
-        except Exception as e:
-            raise e
-        else:
-            return generic_properties
-
-    def get_schema_properties(self, migrated_event_id):
-        try:
-            event_properties = self.db_instance.handler(
-                query=f"select * from property_event_schema where event_id={migrated_event_id};"
-            )
-        except Exception as e:
-            raise e
-        else:
-            return event_properties
-
-    def join_user_event_properties(self, event_name):
-        try:
-            user_events_properties = self.db_instance.handler(
-                query=self.get_user_event_properties_query(event_name=event_name)
-            )
-        except Exception as e:
-            raise e
-        else:
-            return user_events_properties
-
-    @staticmethod
-    def get_user_event_properties_query(event_name):
-        query = f"""SELECT 
-                          event_property.id, 
-                          event_property.event_id, 
-                          event_property.name, 
-                          event_property.value, 
-                          user_event.name, 
-                          user_event.created_at, 
-                          user_event.updated_at, 
-                          user_event.valid, 
-                          user_event.user_id 
-                        FROM 
-                          event_property 
-                          INNER JOIN user_event ON event_property.event_id = user_event.id 
-                        WHERE 
-                          user_event.id in (
-                            SELECT 
-                              id 
-                            FROM 
-                              user_event 
-                            WHERE 
-                              name = '{event_name}' 
-                              AND migrated = false 
-                            limit 
-                              100
-                          ) 
-                        ORDER BY 
-                          user_event.id;
-                    """
-        return query
-
-    def update_invalid_user_event(self, event_id):
-        try:
-            update_user_event = self.db_instance.handler(
-                query=f"UPDATE user_event SET valid ='unvalid' WHERE id={event_id};"
-            )
-        except Exception as e:
-            raise e
-        else:
-            return update_user_event
+    def update_invalid_user_event(self, event_id) -> Tuple[Any]:
+        with self.db_conn.cursor() as curs:
+            curs.execute(f"UPDATE user_event SET valid ='unvalid' WHERE id={event_id};")
+            return curs.fetchone()
 
     def update_valid_user_event(self, event_id):
-        try:
-            update_user_event = self.db_instance.handler(
-                query=f"UPDATE user_event SET valid ='validated' WHERE id={event_id};"
-            )
-        except Exception as e:
-            raise e
-        else:
-            return update_user_event
+        with self.db_conn.cursor() as curs:
+            curs.execute(f"UPDATE user_event SET valid ='validated' WHERE id={event_id};")
+            return curs.fetchone()
 
     @staticmethod
     def clean_text(text: str) -> str:
@@ -157,7 +111,6 @@ class Validation:
             .replace("___", "_")
         )
         return text.lower()
-
 
 
 if __name__ == "__main__":
