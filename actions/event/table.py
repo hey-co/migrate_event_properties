@@ -4,7 +4,7 @@ import unidecode
 
 
 class Table:
-    def __init__(self, name: str, db_name: str):
+    def __init__(self, name: str):
         self.name = self.clean_name(name=name)
         self.conn = main_db.DBInstance(public_key="kKS0DfTKpE8TqUZs")
 

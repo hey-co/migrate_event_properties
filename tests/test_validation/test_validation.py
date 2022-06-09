@@ -9,7 +9,7 @@ def start_main_class():
 
 
 def test_general(start_main_class):
-    print(start_main_class.handler())
+    print(start_main_class.execute())
 
 
 def test_get_migrated_schemas(start_main_class):
