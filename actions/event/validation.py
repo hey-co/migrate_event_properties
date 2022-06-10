@@ -20,45 +20,65 @@ class Validation:
 
     def validate_events(self, migrated_schemas):
         for schema in migrated_schemas:
-            self.__validate_event(schema=schema)
-
+            schema_properties = self.__get_schema_properties(schema_name=schema[1])
+            self.__validate_event(
+                schema=schema,
+                schema_properties=schema_properties
+            )
         self.db_conn.close()
 
-    def __validate_event(self, schema):
+    def __get_schema_properties(self, schema_name: str) -> List[Tuple[Any]]:
+        with self.db_conn.cursor() as curs:
+            curs.execute(f"""
+                SELECT
+                    property_event_schema.name,
+                    property_event_schema.type
+                FROM
+                    property_event_schema
+                    INNER JOIN event_schema ON property_event_schema.event_id = event_schema.id
+                WHERE
+                    event_schema.name like '{schema_name}'
+                ORDER BY
+                    property_event_schema.name;
+                """)
+
+            return [line for line in curs.fetchall()]
+
+    def __validate_event(self, schema, schema_properties):
         for event in self.__get_events(event_name=schema[1]):
             for event_property in self.__get_event_properties(event_id=event[0]):
-                schema_property = self.__get_schema_property(property_name=event_property[1])
-                if schema_property[2] == "text":
-                    try:
-                        cast = str(event_property[2])
-                    except ValueError:
-                        self.update_invalid_user_event(event_id=event_property[1])
-                        break
-                    else:
-                        if isinstance(cast, str):
-                            self.update_valid_user_event(event_id=event_property[1])
+                schema_property = list(
+                    filter(
+                        lambda scp: self.clean_text(text=scp[0]) == self.clean_text(text=event_property[1]),
+                        schema_properties
+                    )
+                )
+                if schema_property:
+                    if schema_property[0][1] == "text":
+                        try:
+                            cast = str(event_property[2])
+                        except ValueError:
+                            self.update_invalid_user_event(event_id=event[0])
+                            break
+                    elif schema_property[0][1] == "numeric":
+                        try:
+                            cast = float(event_property[2].replace(",", "."))
+                        except ValueError:
+                            self.update_invalid_user_event(event_id=event[0])
+                            break
+                    elif schema_property[0][1] == "date":
+                        try:
+                            cast = datetime.fromisoformat(event_property[2])
+                        except ValueError:
+                            self.update_invalid_user_event(event_id=event[0])
+                            break
+                else:
+                    self.update_invalid_user_event(event_id=event[0])
+                    break
 
-                elif schema_property[2] == "numeric":
-                    try:
-                        cast = int(event_property[2])
-                    except ValueError:
-                        self.update_invalid_user_event(event_id=event_property[1])
-                        break
-                    else:
-                        if isinstance(cast, int):
-                            self.update_valid_user_event(event_id=event_property[1])
+            self.update_valid_user_event(event_id=event[0])
 
-                elif schema_property[2] == "date":
-                    try:
-                        cast = datetime.strptime(event_property[2], '%d/%m/%y')
-                    except ValueError:
-                        self.update_invalid_user_event(event_id=event_property[1])
-                        break
-                    else:
-                        if isinstance(cast, datetime):
-                            self.update_valid_user_event(event_id=event_property[1])
-
-    def __get_events(self, event_name):
+    def __get_events(self, event_name) -> List[Tuple[Any]]:
         with self.db_conn.cursor() as curs:
             curs.execute(f"""
                 SELECT 
@@ -81,26 +101,15 @@ class Validation:
             """)
             return [line for line in curs.fetchall()]
 
-    def __get_schema_property(self, property_name: str) -> Tuple[Any]:
-        with self.db_conn.cursor() as curs:
-            curs.execute(f"""
-                SELECT 
-                    * 
-                FROM 
-                    property_event_schema
-                WHERE name = '{property_name}';
-            """)
-            return curs.fetchone()
-
-    def update_invalid_user_event(self, event_id) -> Tuple[Any]:
+    def update_invalid_user_event(self, event_id: int) -> str:
         with self.db_conn.cursor() as curs:
             curs.execute(f"UPDATE user_event SET valid ='unvalid' WHERE id={event_id};")
-            return curs.fetchone()
+        self.db_conn.commit()
 
-    def update_valid_user_event(self, event_id):
+    def update_valid_user_event(self, event_id: int) -> str:
         with self.db_conn.cursor() as curs:
             curs.execute(f"UPDATE user_event SET valid ='validated' WHERE id={event_id};")
-            return curs.fetchone()
+        self.db_conn.commit()
 
     @staticmethod
     def clean_text(text: str) -> str:
@@ -110,7 +119,7 @@ class Validation:
             .replace("__", "_")
             .replace("___", "_")
         )
-        return text.lower()
+        return text.upper()
 
 
 if __name__ == "__main__":

@@ -53,7 +53,7 @@ class Table:
                             SELECT 
                             FROM 
                                 information_schema.tables 
-                            WHERE table_schema = 'public' AND table_name = '{self.name}'
+                            WHERE table_schema = 'public' AND table_name = '{self.name.lower()}'
                         );
                 """
         return query
@@ -65,7 +65,7 @@ class Table:
                             SELECT 
                             FROM 
                                 information_schema.columns 
-                            WHERE COLUMN_NAME='{column_name}' AND table_name='{table_name}'
+                            WHERE table_schema = 'public' AND COLUMN_NAME='{column_name.lower()}' AND table_name='{table_name.lower()}'
                         );
                 """
         return query
@@ -105,10 +105,15 @@ class Table:
                 .replace("__", "_")
                 .replace("___", "_")
         )
-        return text.lower()
+        return text.upper()
 
     def get_varchar_line(self, column: Tuple[Any]) -> str:
         return f"{self.clean_name(name=column[0])} {column[1]} 255"
 
     def get_normal_line(self, column: Tuple[Any]) -> str:
         return f"{self.clean_name(name=column[0])} {column[1]}"
+
+
+if __name__ == "__main__":
+    table = Table(name='SGC_SPEC')
+    print(table.build_table())

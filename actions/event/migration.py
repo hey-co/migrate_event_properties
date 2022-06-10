@@ -116,6 +116,7 @@ class Migration:
 
         conn1 = self.get_insert_conn()
 
+        pivot.to_csv("pivot.csv")
         pivot.to_sql(schema_name, conn, if_exists="append", index=False)
 
         conn1.commit()
@@ -267,7 +268,7 @@ class Migration:
             .replace("__", "_")
             .replace("___", "_")
         )
-        return text.lower()
+        return text.upper()
 
     @staticmethod
     def get_data_frame(data: List[Tuple[Any]], columns: List[str]) -> pd.DataFrame:

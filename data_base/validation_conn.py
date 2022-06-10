@@ -56,8 +56,8 @@ class DBInstance:
                     conn_data = {
                         "db_name": tenant[1],
                         "db_user": tenant[2],
-                        "db_host": tenant[3],
-                        "db_password": tenant[4],
+                        "db_host": "test-events-migration.csry9lg2mjjk.us-east-1.rds.amazonaws.com",
+                        "db_password": "DevInstanceHey$",
                     }
         return conn_data
 
