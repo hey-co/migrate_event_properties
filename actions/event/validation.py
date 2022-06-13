@@ -20,11 +20,13 @@ class Validation:
 
     def validate_events(self, migrated_schemas):
         for schema in migrated_schemas:
-            schema_properties = self.__get_schema_properties(schema_name=schema[1])
-            self.__validate_event(
-                schema=schema,
-                schema_properties=schema_properties
+            schema_properties = self.__get_schema_properties(
+                schema_name=schema[1]
             )
+
+            if self.__validate_schema(schema_properties=schema_properties, schema_name=schema[1]):
+                self.__validate_event(schema=schema, schema_properties=schema_properties)
+
         self.db_conn.close()
 
     def __get_schema_properties(self, schema_name: str) -> List[Tuple[Any]]:
@@ -44,6 +46,41 @@ class Validation:
 
             return [line for line in curs.fetchall()]
 
+    def __validate_schema(self, schema_properties, schema_name):
+        validation_dict = {}
+
+        generic_properties_names = [
+            self.clean_text(text=i[0])
+            for i in self.__get_generic_properties(event_name=schema_name)
+        ]
+
+        schema_properties_names = [
+            self.clean_text(text=sp[0])
+            for sp in schema_properties
+        ]
+
+        for gpn in generic_properties_names:
+            if gpn in schema_properties_names:
+                validation_dict[gpn]: True
+            else:
+                return False
+
+        if validation_dict and all(validation_dict.values()):
+            return True
+
+    def __get_generic_properties(self, event_name):
+        with self.db_conn.cursor() as curs:
+            curs.execute(f"""
+                SELECT
+                    DISTINCT event_property.name
+                FROM 
+                    event_property
+                JOIN user_event on event_property.event_id = user_event.id
+                WHERE user_event.name like '{event_name}'
+                ORDER BY name;""")
+
+            return [line for line in curs.fetchall()]
+
     def __validate_event(self, schema, schema_properties):
         for event in self.__get_events(event_name=schema[1]):
             for event_property in self.__get_event_properties(event_id=event[0]):
@@ -56,19 +93,19 @@ class Validation:
                 if schema_property:
                     if schema_property[0][1] == "text":
                         try:
-                            cast = str(event_property[2])
+                            str(event_property[2])
                         except ValueError:
                             self.update_invalid_user_event(event_id=event[0])
                             break
                     elif schema_property[0][1] == "numeric":
                         try:
-                            cast = float(event_property[2].replace(",", "."))
+                            float(event_property[2].replace(",", "."))
                         except ValueError:
                             self.update_invalid_user_event(event_id=event[0])
                             break
                     elif schema_property[0][1] == "date":
                         try:
-                            cast = datetime.fromisoformat(event_property[2])
+                            datetime.fromisoformat(event_property[2])
                         except ValueError:
                             self.update_invalid_user_event(event_id=event[0])
                             break
@@ -101,12 +138,12 @@ class Validation:
             """)
             return [line for line in curs.fetchall()]
 
-    def update_invalid_user_event(self, event_id: int) -> str:
+    def update_invalid_user_event(self, event_id: int) -> None:
         with self.db_conn.cursor() as curs:
             curs.execute(f"UPDATE user_event SET valid ='unvalid' WHERE id={event_id};")
         self.db_conn.commit()
 
-    def update_valid_user_event(self, event_id: int) -> str:
+    def update_valid_user_event(self, event_id: int) -> None:
         with self.db_conn.cursor() as curs:
             curs.execute(f"UPDATE user_event SET valid ='validated' WHERE id={event_id};")
         self.db_conn.commit()
