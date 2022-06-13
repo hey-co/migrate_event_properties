@@ -61,10 +61,9 @@ class Validation:
 
         for gpn in generic_properties_names:
             if gpn in schema_properties_names:
-                validation_dict[gpn]: True
+                validation_dict[gpn] = True
             else:
                 return False
-
         if validation_dict and all(validation_dict.values()):
             return True
 
