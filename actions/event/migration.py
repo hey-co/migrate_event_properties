@@ -41,6 +41,7 @@ class Migration:
                 query=self.get_pivot_query(
                     columns=data.get("pivot_columns"),
                     schema_name=data.get("schema_name"),
+                    generic_properties=data.get("generic_properties")
                 )
             ),
             columns=self.get_basic_pivot_columns() + data.get("name_columns"),
@@ -56,6 +57,7 @@ class Migration:
                 schema_properties=schema_properties
             ),
             "schema_name": schema_name,
+            "generic_properties": self.__get_generic_properties(schema_properties=schema_properties),
             "name_columns": [self.clean_text(gp[1]) for gp in schema_properties],
         }
         return data
@@ -63,7 +65,7 @@ class Migration:
     @staticmethod
     def get_pivot_columns(schema_properties) -> str:
         columns = "event_id integer, " + ", ".join(
-            [f'"{gp[1].upper()}" {gp[1]}' for gp in schema_properties]
+            [f'"{gp[1].upper()}" {gp[2]}' for gp in schema_properties]
         )
         return columns
 
@@ -88,11 +90,8 @@ class Migration:
 
     def insert_pivot(self, pivot: pd.DataFrame, schema_name: str):
         conn = create_engine(self.get_str_conn()).connect()
-
         conn1 = self.get_insert_conn()
-
         pivot.to_sql(schema_name.lower(), conn, if_exists="append", index=False)
-
         conn1.commit()
         conn1.close()
 
@@ -129,7 +128,7 @@ class Migration:
                 continue
 
     @staticmethod
-    def get_pivot_query(columns, schema_name: str) -> str:
+    def get_pivot_query(columns, schema_name: str, generic_properties) -> str:
         query = f"""
             SELECT * FROM user_event JOIN (SELECT *
                 FROM crosstab('
@@ -150,12 +149,24 @@ class Migration:
                           name = ''{schema_name}''
                           AND migrated = false
                           AND valid = ''validated''
-                        limit
+                        LIMIT
                           1
                       )
                     ORDER BY
-                      event_property.name') as ct({columns})"""
+                      event_property.name', '{generic_properties}') as ct({columns})
+            ) as prop on user_event.id=prop.event_id
+        """
         return query
+
+    @staticmethod
+    def __get_generic_properties(schema_properties):
+        generic_properties_query = f"""
+            SELECT a
+            FROM (
+                values {", ".join([f"(''{sp[1]}'')" for sp in schema_properties])}
+            ) s(a);
+        """
+        return generic_properties_query
 
     def get_schema_properties(self, migrated_event_id: int):
         try:
