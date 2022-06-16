@@ -122,7 +122,7 @@ class Validation:
                 FROM 
                     user_event 
                 WHERE name = '{event_name}' AND migrated = false 
-                LIMIT 100;
+                LIMIT 200;
             """)
             return [line for line in curs.fetchall()]
 

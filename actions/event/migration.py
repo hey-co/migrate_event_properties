@@ -29,12 +29,6 @@ class Migration:
                 schema_name=schema[1].lower(),
             )
 
-            """
-            self.update_user_events_migrated(
-                event_ids=df_event_properties["property_event_id"].tolist()
-            )
-            """
-
     def get_pivot_insert(self, data: Dict[str, Any]) -> pd.DataFrame:
         pivot = self.get_data_frame(
             data=self.db_instance.handler(
@@ -48,6 +42,7 @@ class Migration:
         )
 
         pivot.drop(self.get_delete_pivot_columns(), axis=1, inplace=True)
+
         return pivot
 
     def get_pivot_data(self, schema_properties, schema_name) -> Dict[str, Any]:
@@ -89,7 +84,10 @@ class Migration:
     def insert_pivot(self, pivot: pd.DataFrame, schema_name: str):
         conn = create_engine(self.get_str_conn()).connect()
         conn1 = self.get_insert_conn()
+        event_ids = list(pivot["id"])
+        pivot.to_csv("pivot.csv")
         pivot.to_sql(schema_name.lower(), conn, if_exists="append", index=False)
+        self.update_user_events_migrated(event_ids=event_ids)
         conn1.commit()
         conn1.close()
 
@@ -148,7 +146,7 @@ class Migration:
                           AND migrated = false
                           AND valid = ''validated''
                         LIMIT
-                          1
+                          10
                       )
                     ORDER BY
                       event_property.name', '{generic_properties}') as ct({columns})
