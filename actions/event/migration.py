@@ -26,7 +26,7 @@ class Migration:
 
             self.insert_pivot(
                 pivot=self.get_pivot_insert(data=data),
-                schema_name=self.clean_text(text=schema[1]),
+                schema_name=schema[1].lower(),
             )
 
             """
@@ -48,7 +48,6 @@ class Migration:
         )
 
         pivot.drop(self.get_delete_pivot_columns(), axis=1, inplace=True)
-
         return pivot
 
     def get_pivot_data(self, schema_properties, schema_name) -> Dict[str, Any]:
@@ -58,14 +57,13 @@ class Migration:
             ),
             "schema_name": schema_name,
             "generic_properties": self.__get_generic_properties(schema_properties=schema_properties),
-            "name_columns": [self.clean_text(gp[1]) for gp in schema_properties],
+            "name_columns": [self.clean_text(gp[1]).lower() for gp in schema_properties],
         }
         return data
 
-    @staticmethod
-    def get_pivot_columns(schema_properties) -> str:
+    def get_pivot_columns(self, schema_properties) -> str:
         columns = "event_id integer, " + ", ".join(
-            [f'"{gp[1].upper()}" {gp[2]}' for gp in schema_properties]
+            [f'"{self.clean_text(text=gp[1].upper())}" {gp[2]}' for gp in schema_properties]
         )
         return columns
 
@@ -158,12 +156,11 @@ class Migration:
         """
         return query
 
-    @staticmethod
-    def __get_generic_properties(schema_properties):
+    def __get_generic_properties(self, schema_properties):
         generic_properties_query = f"""
             SELECT a
             FROM (
-                values {", ".join([f"(''{sp[1]}'')" for sp in schema_properties])}
+                values {", ".join([f"(''{self.clean_text(text=sp[1])}'')" for sp in schema_properties])}
             ) s(a);
         """
         return generic_properties_query
@@ -196,7 +193,7 @@ class Migration:
             .replace("__", "_")
             .replace("___", "_")
         )
-        return text.lower()
+        return text.upper()
 
     @staticmethod
     def get_data_frame(data: List[Tuple[Any]], columns: List[str]) -> pd.DataFrame:
