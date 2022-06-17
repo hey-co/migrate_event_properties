@@ -146,7 +146,7 @@ class Migration:
                           AND migrated = false
                           AND valid = ''validated''
                         LIMIT
-                          10
+                          100
                       )
                     ORDER BY
                       event_property.name', '{generic_properties}') as ct({columns})
