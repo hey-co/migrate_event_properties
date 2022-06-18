@@ -1,7 +1,7 @@
 from data_base import main_db
 
 
-class CleanData:
+class Clean:
     def __init__(self, event_name: str, property_name: str, public_key: str):
         self.event_name: str = event_name
         self.property_name: str = property_name
@@ -21,34 +21,55 @@ class CleanData:
         return query
 
 
-class CleanString(CleanData):
-    def __init__(self, event_name, property_name, public_key, old_value, new_value):
-        self.old_value = old_value
-        self.new_value = new_value
+class CleanActions(Clean):
+    def __init__(self, event_name, property_name, public_key):
         super().__init__(event_name, property_name, public_key)
 
-    def clean_data(self):
-        query = super().get_clean_data_query(old_value=self.old_value, new_value=self.new_value)
+    def remove_white_space(self):
+        query = super().get_clean_data_query(old_value=" ", new_value="")
+        super().db_instance.handler(query=query)
+
+    def replace_comma_doc(self):
+        query = super().get_clean_data_query(old_value=",", new_value=".")
+        super().db_instance.handler(query=query)
+
+    def remove_dollar_symbol(self):
+        query = super().get_clean_data_query(old_value="$", new_value="")
+        super().db_instance.handler(query=query)
+
+    def remove_euro_sign(self):
+        query = super().get_clean_data_query(old_value="€", new_value="")
         super().db_instance.handler(query=query)
 
 
-class CleanFloat(CleanData):
-    def __init__(self, event_name, property_name, public_key, old_value, new_value):
-        self.old_value = old_value
-        self.new_value = new_value
+class CleanString(CleanActions):
+    def __init__(self, event_name, property_name, public_key):
         super().__init__(event_name, property_name, public_key)
 
-    def clean_data(self):
-        query = super().get_clean_data_query(old_value=self.old_value, new_value=self.new_value)
-        super().db_instance.handler(query=query)
+    super().remove_white_space()
+    super().replace_comma_doc()
 
 
-class CleanDate(CleanData):
-    def __init__(self, event_name, property_name, public_key, old_value, new_value):
-        self.old_value = old_value
-        self.new_value = new_value
+class CleanFloat(CleanActions):
+    def __init__(self, event_name, property_name, public_key):
         super().__init__(event_name, property_name, public_key)
 
-    def clean_data(self):
-        query = super().get_clean_data_query(old_value=self.old_value, new_value=self.new_value)
-        super().db_instance.handler(query=query)
+    super().replace_comma_doc()
+    super().remove_dollar_symbol()
+    super().remove_euro_sign()
+
+
+class CleanDate(CleanActions):
+    def __init__(self, event_name, property_name, public_key):
+        super().__init__(event_name, property_name, public_key)
+
+    super().replace_comma_doc()
+
+
+def main():
+    clean_string = CleanString(event_name="SGC_SPEC", property_name="CANTIDAD_CORTESIA", public_key="kKS0DfTKpE8TqUZs")
+    print(clean_string.remove_white_space())
+
+
+if __name__ == '__main__':
+    main()
