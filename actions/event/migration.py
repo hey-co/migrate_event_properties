@@ -129,9 +129,9 @@ class Migration:
             SELECT * FROM user_event JOIN (SELECT *
                 FROM crosstab('
                     SELECT
-                      user_event.id,
-                      event_property.name,
-                      event_property.value
+                      user_event.id as event_id,
+                      event_property.name as name,
+                      event_property.value as value
                     FROM
                       event_property
                       INNER JOIN user_event ON event_property.event_id = user_event.id
@@ -147,9 +147,7 @@ class Migration:
                           AND valid = ''validated''
                         LIMIT
                           100
-                      )
-                    ORDER BY
-                      event_property.name', '{generic_properties}') as ct({columns})
+                      )', '{generic_properties}') as ct({columns})
             ) as prop on user_event.id=prop.event_id
         """
         return query
