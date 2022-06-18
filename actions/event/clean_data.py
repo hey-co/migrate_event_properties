@@ -27,43 +27,34 @@ class CleanActions(Clean):
 
     def remove_white_space(self):
         query = super().get_clean_data_query(old_value=" ", new_value="")
-        super().db_instance.handler(query=query)
+        self.db_instance.handler(query=query)
 
     def replace_comma_doc(self):
         query = super().get_clean_data_query(old_value=",", new_value=".")
-        super().db_instance.handler(query=query)
+        self.db_instance.handler(query=query)
 
     def remove_dollar_symbol(self):
         query = super().get_clean_data_query(old_value="$", new_value="")
-        super().db_instance.handler(query=query)
+        self.db_instance.handler(query=query)
 
     def remove_euro_sign(self):
         query = super().get_clean_data_query(old_value="€", new_value="")
-        super().db_instance.handler(query=query)
+        self.db_instance.handler(query=query)
 
 
 class CleanString(CleanActions):
     def __init__(self, event_name, property_name, public_key):
         super().__init__(event_name, property_name, public_key)
 
-    super().remove_white_space()
-    super().replace_comma_doc()
-
 
 class CleanFloat(CleanActions):
     def __init__(self, event_name, property_name, public_key):
         super().__init__(event_name, property_name, public_key)
 
-    super().replace_comma_doc()
-    super().remove_dollar_symbol()
-    super().remove_euro_sign()
-
 
 class CleanDate(CleanActions):
     def __init__(self, event_name, property_name, public_key):
         super().__init__(event_name, property_name, public_key)
-
-    super().replace_comma_doc()
 
 
 def main():
