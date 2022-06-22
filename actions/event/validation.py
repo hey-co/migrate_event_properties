@@ -90,7 +90,7 @@ class Validation:
                     )
                 )
                 if schema_property:
-                    if schema_property[0][1] == "text":
+                    if schema_property[0][1] == "varchar":
                         try:
                             str(event_property[2])
                         except ValueError:
@@ -105,6 +105,12 @@ class Validation:
                     elif schema_property[0][1] == "date":
                         try:
                             datetime.fromisoformat(event_property[2])
+                        except ValueError:
+                            self.update_invalid_user_event(event_id=event[0])
+                            break
+                    elif schema_property[0][1] == "integer":
+                        try:
+                            int(event_property[2])
                         except ValueError:
                             self.update_invalid_user_event(event_id=event[0])
                             break
