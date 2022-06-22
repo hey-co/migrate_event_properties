@@ -18,8 +18,8 @@ class Table:
 
     def create_table(self) -> None:
         line_fields = ", ".join(self.get_creation_fields())
-        table = f"CREATE TABLE {self.name} ({line_fields});"
-        self.conn.handler(query=table)
+        query_table = f"CREATE TABLE {self.name} ({line_fields});"
+        self.conn.handler(query=query_table)
 
     def get_creation_fields(self) -> List[str]:
         line_fields = []
@@ -65,7 +65,10 @@ class Table:
                             SELECT 
                             FROM 
                                 information_schema.columns 
-                            WHERE table_schema = 'public' AND COLUMN_NAME='{column_name.lower()}' AND table_name='{table_name.lower()}'
+                            WHERE 
+                                table_schema = 'public' 
+                                AND COLUMN_NAME='{column_name.lower()}' 
+                                AND table_name='{table_name.lower()}' 
                         );
                 """
         return query
