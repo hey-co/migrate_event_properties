@@ -1,11 +1,13 @@
 from data_base import main_db
 from typing import List, Tuple, Any
+import re
 
 
 class Clean:
     def __init__(self, event_name: str, property_name: str, public_key: str):
-        self.event_name: str = event_name
-        self.property_name: str = property_name
+        self.event_name = event_name
+        self.property_name = property_name
+        self.properties = self.__get_event_properties()
         self.db_instance = main_db.DBInstance(public_key=public_key)
 
     def get_clean_data_query(self, old_value: str, new_value: str) -> str:
@@ -21,7 +23,7 @@ class Clean:
             """
         return query
 
-    def get_property_values(self) -> List[Tuple[Any]]:
+    def __get_event_properties(self) -> List[Tuple[Any]]:
         property_values = self.db_instance.handler(query=f"""
             SELECT 
                 property_id, value 
@@ -36,24 +38,49 @@ class Clean:
             """)
         return property_values
 
-    def update_property_value(self, data):
-        self.db_instance.handler(query=f"""
-            UPDATE
-                event_property            
-            WHERE
-                id = {data[0]}
-            SET
-                value = CAST(({data[1]}) AS int)
-        """)
+    def cast_integer(self):
+        for event_property in self.properties:
+            self.db_instance.handler(query=f"""
+                UPDATE
+                    event_property            
+                WHERE
+                    id = {event_property[0]}
+                SET
+                    value = CAST(({event_property[2]}) AS int)
+            """)
+
+    def validate_email(self):
+        result = {}
+        for ep in self.properties:
+            if re.match(r"[^@]+@[^@]+\.[^@]+", ep[2]):
+                result[ep[2]] = True
+            else:
+                result[ep[2]] = False
+
+    def change_properties_name(self, new_name: str):
+        for event_property in self.properties:
+            self.db_instance.handler(query=f"""
+                UPDATE
+                    event_property
+                SET
+                    name = {new_name}
+                WHERE 
+                    id = {event_property[0]}
+            """)
 
 
 class CleanActions(Clean):
     def __init__(self, event_name, property_name, public_key):
         super().__init__(event_name, property_name, public_key)
 
-    def get_remove_zeros_query(self):
-        for property_value in super().get_property_values():
-            super().update_property_value(data=property_value)
+    def update_properties_name(self):
+        super().change_properties_name(new_name=" ")
+
+    def validate_email(self):
+        super().validate_email()
+
+    def cast_integer(self):
+        super().cast_integer()
 
     def remove_white_space(self):
         query = super().get_clean_data_query(old_value=" ", new_value="")
