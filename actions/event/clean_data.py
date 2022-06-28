@@ -57,24 +57,10 @@ class Clean:
             else:
                 result[ep[2]] = False
 
-    def change_properties_name(self, new_name: str):
-        for event_property in self.properties:
-            self.db_instance.handler(query=f"""
-                UPDATE
-                    event_property
-                SET
-                    name = {new_name}
-                WHERE 
-                    id = {event_property[0]}
-            """)
-
 
 class CleanActions(Clean):
     def __init__(self, event_name, property_name, public_key):
         super().__init__(event_name, property_name, public_key)
-
-    def update_properties_name(self):
-        super().change_properties_name(new_name=" ")
 
     def validate_email(self):
         super().validate_email()
