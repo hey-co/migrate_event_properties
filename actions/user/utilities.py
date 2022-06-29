@@ -85,9 +85,17 @@ class Property:
     def handler(self):
         if self.property:
             if len(self.property) > 1:
-                pass
+                if len(set([p[2] for p in self.property if p[2]])) > 1:
+                    pass
+                else:
+                    self.migrate_property()
             else:
-                self.migrate_property()
+                if self.property[0][2]:
+                    self.migrate_property()
+                else:
+                    self.delete_property(
+                        property_id=self.property[0][0]
+                    )
         else:
             pass
 
@@ -129,6 +137,6 @@ class Property:
 
 if __name__ == "__main__":
     init = Property(
-        user_id=14005983, property_name="mobile_number", public_key="kKS0DfTKpE8TqUZs"
+        user_id=33956080, property_name="email", public_key="kKS0DfTKpE8TqUZs"
     )
     print(init.handler())
