@@ -3,11 +3,11 @@ from data_base import main_db
 
 class Property:
     def __init__(self, user_id: int, property_name: str, public_key: str):
+        self.db_instance = main_db.DBInstance(public_key=public_key)
         self.user_id = user_id
         self.property_name = property_name
         self.property = self.__get_user_property()
         self.columns = self.__get_columns()
-        self.db_instance = main_db.DBInstance(public_key=public_key)
 
     def __get_columns(self):
         columns = self.db_instance.handler(
@@ -42,65 +42,85 @@ class Property:
     def __get_user_record(self, column):
         user_record = self.db_instance.handler(
             query=f"""
-            SELECT 
-                {column}
-            FROM 
-                user_company 
-            WHERE 
-                user_id = {self.user_id}
-            ;
+                SELECT 
+                    {column}
+                FROM 
+                    user_company 
+                WHERE 
+                    id = {self.user_id}
+                ;
         """
         )
+        return user_record[0][0]
 
-        return user_record
+    def migrate_property(self):
+        if self.property[0][1] in [c[0] for c in self.columns]:
+            if self.property[0][2] == self.__get_user_record(column=self.property[0][1]):
+                pass
+            else:
+                self.update_user_property(
+                    column=self.property[0][1],
+                    value=self.property[0][2]
+                )
 
-    def handler(self):
+                self.delete_property(
+                    property_id=self.property[0][0]
+                )
 
-        if len(self.property) > 1:
+            if self.__get_user_record(column=self.property[0][1]) is None:
+                self.update_user_property(
+                    column=self.property[0][1],
+                    value=self.property[0][2]
+                )
+
+                self.delete_property(
+                    property_id=self.property[0][0]
+                )
+            else:
+                pass
             pass
         else:
-            if self.property[2] == self.__get_user_record(column=self.property[1]):
+            pass
+
+    def handler(self):
+        if self.property:
+            if len(self.property) > 1:
                 pass
             else:
-                self.update_user_property(
-                    column=self.property[1],
-                    value=self.property[2]
-                )
-
-                self.delete_property(
-                    property_id=self.property[0]
-                )
-
-            if self.__get_user_record(column=self.property[1]) == "NULL":
-                self.update_user_property(
-                    column=self.property[1],
-                    value=self.property[2]
-                )
-                self.delete_property(
-                    property_id=self.property[0]
-                )
-            else:
-                pass
+                self.migrate_property()
+        else:
             pass
 
     def update_user_property(self, column, value):
+        if type(value) == str:
+            query = f"""
+                UPDATE
+                    user_company
+                SET
+                    {column} = '{value}'
+                WHERE
+                    id = {self.user_id}
+                ;
+            """
+        else:
+            query = f"""
+                UPDATE
+                    user_company
+                SET
+                    {column} = {value}
+                WHERE
+                    id = {self.user_id}
+                ;
+            """
+
         self.db_instance.handler(
-            query=f"""
-            UPDATE
-                user_company
-            SET
-                {column} = {value}
-            WHERE
-                id = {self.user_id}
-            ;
-        """
+            query=query
         )
 
     def delete_property(self, property_id):
         self.db_instance.handler(
             query=f"""
-            DELETE
-                FROM 'user_property'
+                DELETE FROM user_property
                 WHERE id = {property_id}
             ;
         """
@@ -109,6 +129,6 @@ class Property:
 
 if __name__ == "__main__":
     init = Property(
-        user_id=14005983, property_name="Naturaleza", public_key="kKS0DfTKpE8TqUZs"
+        user_id=14005983, property_name="mobile_number", public_key="kKS0DfTKpE8TqUZs"
     )
     print(init.handler())
