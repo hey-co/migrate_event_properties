@@ -2,49 +2,90 @@ from data_base import main_db
 
 
 class Property:
-    def __init__(self, user_id: str, property_name: str, public_key: str):
+    def __init__(self, user_id: int, property_name: str, public_key: str):
         self.user_id = user_id
         self.property_name = property_name
-        self.properties = self.__get_user_properties()
+        self.property = self.__get_user_property()
+        self.columns = self.__get_columns()
         self.db_instance = main_db.DBInstance(public_key=public_key)
 
-    def __get_user_columns(self, user_id):
-        columns = self.db_instance.handler(query=f"""
+    def __get_columns(self):
+        columns = self.db_instance.handler(
+            query=f"""
             SELECT
                 column_name
             FROM
                 INFORMATION_SCHEMA.COLUMNS
             WHERE
-                TABLE_NAME = 'user_company' AND id = {user_id}
+                TABLE_NAME = 'user_company'
             ;
-        """)
+        """
+        )
         return columns
 
-    def __get_user_properties(self):
-        properties = self.db_instance.handler(query=f"""
+    def __get_user_property(self):
+        properties = self.db_instance.handler(
+            query=f"""
             SELECT 
                 *
             FROM 
                 user_property 
             WHERE 
-                user_id in (
-                    select id from user_company where name = '{self.user_id}' LIMIT 200
-                ) 
+                user_id = {self.user_id}
             AND 
-                name LIKE '{self.property_name}';
-            """)
+                name LIKE '{self.property_name}'
+            ;
+            """
+        )
         return properties
 
-    def filter_properties(self):
-        return list(filter(lambda x: x[1] in self.__get_user_columns(user_id=self.user_id), self.properties))
+    def __get_user_record(self, column):
+        user_record = self.db_instance.handler(
+            query=f"""
+            SELECT 
+                {column}
+            FROM 
+                user_company 
+            WHERE 
+                user_id = {self.user_id}
+            ;
+        """
+        )
+
+        return user_record
 
     def handler(self):
-        for filter_property in self.filter_properties():
-            self.update_user_property(column=filter_property[1], value=filter_property[2])
-            self.delete_property(property_id=filter_property[0])
+
+        if len(self.property) > 1:
+            pass
+        else:
+            if self.property[2] == self.__get_user_record(column=self.property[1]):
+                pass
+            else:
+                self.update_user_property(
+                    column=self.property[1],
+                    value=self.property[2]
+                )
+
+                self.delete_property(
+                    property_id=self.property[0]
+                )
+
+            if self.__get_user_record(column=self.property[1]) == "NULL":
+                self.update_user_property(
+                    column=self.property[1],
+                    value=self.property[2]
+                )
+                self.delete_property(
+                    property_id=self.property[0]
+                )
+            else:
+                pass
+            pass
 
     def update_user_property(self, column, value):
-        self.db_instance.handler(query=f"""
+        self.db_instance.handler(
+            query=f"""
             UPDATE
                 user_company
             SET
@@ -52,12 +93,22 @@ class Property:
             WHERE
                 id = {self.user_id}
             ;
-        """)
+        """
+        )
 
     def delete_property(self, property_id):
-        self.db_instance.handler(query=f"""
+        self.db_instance.handler(
+            query=f"""
             DELETE
                 FROM 'user_property'
                 WHERE id = {property_id}
             ;
-        """)
+        """
+        )
+
+
+if __name__ == "__main__":
+    init = Property(
+        user_id=14005983, property_name="Naturaleza", public_key="kKS0DfTKpE8TqUZs"
+    )
+    print(init.handler())
