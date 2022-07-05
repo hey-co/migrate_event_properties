@@ -82,8 +82,8 @@ class Clean:
 
 
 class CleanActions(Clean):
-    def __init__(self, event_name, property_name, public_key):
-        super().__init__(event_name, property_name, public_key)
+    def __init__(self, property_name, public_key):
+        super().__init__(property_name, public_key)
 
     def validate_email(self):
         super().validate_email()
@@ -112,22 +112,22 @@ class CleanActions(Clean):
 
 
 class CleanString(CleanActions):
-    def __init__(self, event_name, property_name, public_key):
-        super().__init__(event_name, property_name, public_key)
+    def __init__(self, property_name, public_key):
+        super().__init__(property_name, public_key)
 
 
 class CleanFloat(CleanActions):
-    def __init__(self, event_name, property_name, public_key):
-        super().__init__(event_name, property_name, public_key)
+    def __init__(self, property_name, public_key):
+        super().__init__(property_name, public_key)
 
 
 class CleanDate(CleanActions):
-    def __init__(self, event_name, property_name, public_key):
-        super().__init__(event_name, property_name, public_key)
+    def __init__(self, property_name, public_key):
+        super().__init__(property_name, public_key)
 
 
 def main():
-    clean_string = CleanString(event_name="SGC_SPEC", property_name="CANTIDAD_CORTESIA", public_key="kKS0DfTKpE8TqUZs")
+    clean_string = CleanString(property_name="CANTIDAD_CORTESIA", public_key="kKS0DfTKpE8TqUZs")
     print(clean_string.remove_white_space())
 
 
