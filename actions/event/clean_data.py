@@ -17,7 +17,7 @@ class Clean:
             SET
                 value = regexp_replace(value, '{old_value}', '{new_value}')
             WHERE
-                event_id in (select id from user_event where name = '{self.event_name}' LIMIT 200) and name
+                event_id in (select id from user_event where name = '{self.event_name}') and name
             LIKE
                 '{self.property_name}';
             """
@@ -31,7 +31,7 @@ class Clean:
                 event_property 
             WHERE 
                 event_id in (
-                    select id from user_event where name = '{self.event_name}' LIMIT 200
+                    select id from user_event where name = '{self.event_name}'
                 ) 
             AND 
                 name LIKE '{self.property_name}';
@@ -43,10 +43,10 @@ class Clean:
             self.db_instance.handler(query=f"""
                 UPDATE
                     event_property            
-                WHERE
-                    id = {event_property[0]}
                 SET
                     value = CAST(({event_property[2]}) AS int)
+                WHERE
+                    id = {event_property[0]}
             """)
 
     def validate_email(self):
