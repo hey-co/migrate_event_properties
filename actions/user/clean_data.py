@@ -1,5 +1,5 @@
 from data_base import main_db
-from typing import List, Tuple, Any
+from typing import List, Tuple, Any, Dict
 import re
 
 
@@ -29,7 +29,7 @@ class Clean:
             """
         return query
 
-    def __get_user_properties(self):
+    def __get_user_properties(self) -> List[Tuple[Any]]:
         properties = self.db_instance.handler(query=f"""
             SELECT 
                 property_id, 
@@ -50,7 +50,7 @@ class Clean:
             """)
         return properties
 
-    def cast_integer(self):
+    def cast_integer(self) -> None:
         for user_property in self.properties:
             self.db_instance.handler(query=f"""
                 UPDATE
@@ -61,15 +61,16 @@ class Clean:
                     id = {user_property[0]}
             """)
 
-    def validate_email(self):
+    def validate_email(self) -> Dict[str, Any]:
         result = {}
         for user_property in self.properties:
             if re.match(r"[^@]+@[^@]+\.[^@]+", user_property[2]):
                 result[user_property[2]] = True
             else:
                 result[user_property[2]] = False
+        return result
 
-    def change_properties_name(self, new_name: str):
+    def change_properties_name(self, new_name: str) -> None:
         for user_property in self.properties:
             self.db_instance.handler(query=f"""
                 UPDATE
@@ -108,7 +109,7 @@ class CleanActions(Clean):
         self.db_instance.handler(query=query)
 
     def change_properties_name(self):
-        super().change_properties_name()
+        super().change_properties_name(new_name="")
 
 
 class CleanString(CleanActions):
