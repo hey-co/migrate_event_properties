@@ -61,7 +61,7 @@ class Clean:
                     id = {user_property[0]}
             """)
 
-    def validate_email(self) -> Dict[str, Any]:
+    def validate_email(self) -> Dict[str, bool]:
         result = {}
         for user_property in self.properties:
             if re.match(r"[^@]+@[^@]+\.[^@]+", user_property[2]):
