@@ -58,6 +58,16 @@ class Clean:
                 result[ep[2]] = False
         return result
 
+    def delete_value(self) -> None:
+        for ep in self.properties:
+            self.db_instance.handler(query=f"""
+                UPDATE
+                    event_property
+                SET
+                    value = NULL
+                WHERE id = {ep[0]}
+            """)
+
 
 class CleanActions(Clean):
     def __init__(self, event_name, property_name, public_key):

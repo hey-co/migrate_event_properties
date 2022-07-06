@@ -81,6 +81,16 @@ class Clean:
                     id = {user_property[0]}
             """)
 
+    def delete_value(self) -> None:
+        for ep in self.properties:
+            self.db_instance.handler(query=f"""
+                UPDATE
+                    user_property
+                SET
+                    value = NULL
+                WHERE id = {ep[0]}
+            """)
+
 
 class CleanActions(Clean):
     def __init__(self, property_name, public_key):
