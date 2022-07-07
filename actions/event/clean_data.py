@@ -95,6 +95,13 @@ class CleanActions(Clean):
         query = super().get_clean_data_query(old_value="€", new_value="")
         self.db_instance.handler(query=query)
 
+    def delete_value(self):
+        super().delete_value()
+
+    def replace_text(self):
+        query = super().get_clean_data_query(old_value="New text", new_value="")
+        self.db_instance.handler(query=query)
+
 
 class CleanString(CleanActions):
     def __init__(self, event_name, property_name, public_key):
