@@ -118,8 +118,15 @@ class CleanActions(Clean):
         query = super().get_clean_data_query(old_value="€", new_value="")
         self.db_instance.handler(query=query)
 
-    def change_properties_name(self):
+    def update_properties_name(self):
         super().change_properties_name(new_name="")
+
+    def delete_value(self) -> None:
+        super().delete_value()
+
+    def replace_text(self) -> None:
+        query = super().get_clean_data_query(old_value="New text", new_value="")
+        self.db_instance.handler(query=query)
 
 
 class CleanString(CleanActions):
