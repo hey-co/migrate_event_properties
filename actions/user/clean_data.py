@@ -32,7 +32,7 @@ class Clean:
     def __get_user_properties(self) -> List[Tuple[Any]]:
         properties = self.db_instance.handler(query=f"""
             SELECT 
-                property_id, 
+                id, 
                 value 
             FROM 
                 user_property 
@@ -41,10 +41,10 @@ class Clean:
                     select id 
                     from user_company 
                     where 
-                        NOT EXISTS email or 
-                        NOT EXISTS mobile_number or
-                        NOT EXISTS identification
-                ) 
+                        email IS NULL or 
+                        mobile_number IS NULL or
+                        identification IS NULL
+                )
             AND 
                 name LIKE '{self.property_name}';
             """)
