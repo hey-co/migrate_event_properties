@@ -25,8 +25,8 @@ class DBInstance:
         tanants_conn_data = {
             "db_name": "hey_sdk",
             "db_user": "maiq",
-            "db_host": "test-events-migration.csry9lg2mjjk.us-east-1.rds.amazonaws.com",
-            "db_password": "DevInstanceHey$",
+            "db_host": "migrate-properties.csry9lg2mjjk.us-east-1.rds.amazonaws.com",
+            "db_password": "qwerty123.",
         }
 
         conn = self.make_conn(data=tanants_conn_data)
@@ -42,8 +42,8 @@ class DBInstance:
                     conn_data = {
                         "db_name": "hey_elcolombiano",
                         "db_user": "maiq",
-                        "db_host": "test-events-migration.csry9lg2mjjk.us-east-1.rds.amazonaws.com",
-                        "db_password": "DevInstanceHey$"
+                        "db_host": "migrate-properties.csry9lg2mjjk.us-east-1.rds.amazonaws.com",
+                        "db_password": "qwerty123."
                     }
         return conn_data
 
