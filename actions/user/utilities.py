@@ -56,7 +56,9 @@ class Property:
     def migrate_property(self):
         if self.property[0][1] in [c[0] for c in self.columns]:
             if self.property[0][2] == self.get_user_record(column=self.property[0][1]):
-                pass
+                self.delete_property(
+                    property_id=self.property[0][0]
+                )
             else:
                 self.update_user_property(
                     column=self.property[0][1],
