@@ -137,22 +137,12 @@ class Property:
 
 if __name__ == "__main__":
     basic_properties = [
-        "email",
-        "identification",
-        "identification_type",
-        "first_name",
-        "last_name",
-        "mobile_number",
-        "birth_date",
-        "city",
-        "country",
-        "department",
-        "gender"
+        "email"
     ]
 
     for basic_property in basic_properties:
         conn = main_db.DBInstance(public_key="kKS0DfTKpE8TqUZs")
-        user_ids = conn.handler(query=f"SELECT id FROM user_company WHERE {basic_property} IS NOT NULL;")
+        user_ids = conn.handler(query=f"select distinct user_id from user_property where name like 'email';")
         if user_ids:
             for user_id in user_ids:
                 init = Property(
