@@ -142,7 +142,7 @@ if __name__ == "__main__":
 
     for basic_property in basic_properties:
         conn = main_db.DBInstance(public_key="kKS0DfTKpE8TqUZs")
-        user_ids = conn.handler(query=f"select distinct user_id from user_property where name like 'email';")
+        user_ids = conn.handler(query=f"select distinct user_id from user_property where name like '{basic_property}';")
         if user_ids:
             for user_id in user_ids:
                 init = Property(
