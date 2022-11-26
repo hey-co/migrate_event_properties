@@ -40,7 +40,7 @@ class Users:
         try:
             update_user = self.db_instance.handler(
                 query=f"UPDATE user_company SET migrate ='migrated', WHERE id={user_id};"
-            )
+            )   
         except Exception as e:
             raise e
         else:

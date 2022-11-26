@@ -139,7 +139,7 @@ class Property:
 
 if __name__ == "__main__":
     basic_properties = [
-        "email"
+        "identification_type"
     ]
 
     for basic_property in basic_properties:
@@ -151,3 +151,9 @@ if __name__ == "__main__":
                     user_id=user_id[0], property_name=basic_property, public_key="kKS0DfTKpE8TqUZs"
                 )
                 init.handler()
+    """
+    init = Property(
+        user_id=2873829, property_name="identification", public_key="kKS0DfTKpE8TqUZs"
+    )
+    init.handler()
+    """
