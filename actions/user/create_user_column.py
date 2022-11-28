@@ -3,7 +3,7 @@ from data_base import main_db
 
 class Column:
     def __init__(self):
-        self.db_instance = main_db.DBInstance(public_key="kKS0DfTKpE8TqUZs")
+        self.db_instance = main_db.DBInstance(public_key="**")
 
     def handler(self):
         for schema_property in self.get_schema_properties():
