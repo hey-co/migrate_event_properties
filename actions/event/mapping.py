@@ -35,7 +35,6 @@ class Mapping:
         except Exception as e:
             raise e
 
-
     @staticmethod
     def clean_text(text: str) -> str:
         text = unidecode.unidecode(
