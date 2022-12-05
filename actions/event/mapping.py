@@ -20,12 +20,11 @@ class Mapping:
     def write_event_schema(self, event_schema_name):
         try:
             self.db.handler(
-                query=f"""INSERT INTO event_schema(
-                        name, updated_at, created_at, is_active, db_status, is_migrated)
+                query=f"""INSERT INTO event_schema(name, updated_at, created_at, is_active, db_status, is_migrated)
                             VALUES (
-                                {self.clean_text(text=event_schema_name)}, 
-                                {datetime.now()}, 
-                                {datetime.now()}, 
+                                '{self.clean_text(text=event_schema_name)}', 
+                                '{datetime.now()}', 
+                                '{datetime.now()}', 
                                 true, 
                                 'pending_update', 
                                 false
