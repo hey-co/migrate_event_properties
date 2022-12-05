@@ -7,7 +7,7 @@ class Mapping:
     def __init__(self):
         self.db = main_db.DBInstance(public_key="***")
 
-    def __get_distinct_user_event_names(self):
+    def get_distinct_user_event_names(self):
         try:
             distinct_names = self.db.handler(
                 query="select distinct on (name) name from user_event;"
@@ -35,6 +35,7 @@ class Mapping:
         except Exception as e:
             raise e
 
+
     @staticmethod
     def clean_text(text: str) -> str:
         text = unidecode.unidecode(
@@ -45,10 +46,16 @@ class Mapping:
         )
         return text.lower()
 
-    def handler(self):
-        for distinct_name in self.__get_distinct_user_event_names():
+    def update_unique_schemas(self):
+        for distinct_name in self.get_distinct_user_event_names():
             if not self.validate_column(table_name='event_schema', column_name=distinct_name):
                 self.write_event_schema(event_schema_name=distinct_name)
+
+    def handler(self):
+        try:
+            self.update_unique_schemas()
+        except Exception as e:
+            raise e
 
     @staticmethod
     def get_validate_column_query(table_name: str, column_name: str) -> str:
