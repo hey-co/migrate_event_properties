@@ -53,25 +53,6 @@ class Mapping:
                 self.update_event_property(event_name=event_schema_name, event_schema_id=result[0])
                 return result[0]
 
-    def update_event_property(self, event_name, event_schema_id):
-        event_properties = self.get_event_properties(
-            user_events=self.get_events_by_name(event_name=event_name)
-        )
-        self.move_event_properties(event_properties=event_properties, event_schema_id=event_schema_id)
-
-    def move_event_properties(self, event_properties, event_schema_id):
-        for event_property in event_properties:
-            query = f"""INSERT INTO property_event_schema(
-                        name, type, updated_at, created_at, is_active, event_id)
-                        VALUES ('{event_property[1]}', '{event_property[0]}', '{datetime.now()}', '{datetime.now()}', true, {event_schema_id});"""
-        self.db.execute(query)
-
-    def get_events_by_name(self, event_name):
-        return self.db.execute(f"select * from user_event where name = '{event_name}';")
-
-    def get_event_properties(self, user_events):
-        return self.db.execute(f"select * from event_property where event_name = '{event_name}';")
-
     @staticmethod
     def clean_text(text: str) -> str:
         text = unidecode.unidecode(
@@ -82,37 +63,101 @@ class Mapping:
         )
         return text.lower()
 
-    def update_unique_schemas(self):
-        for distinct_name in self.get_distinct_user_event_names():
-            if not self.validate_column(table_name='event_schema', column_name=distinct_name[0]):
-                self.write_event_schema(event_schema_name=distinct_name[0])
-
     def handler(self):
-        try:
-            self.update_unique_schemas()
-        except Exception as e:
-            raise e
+        for distinct_name in self.get_distinct_user_event_names():
+            if self.validate_event_schema(event_schema_name=distinct_name[0]):
+                compare_properties = self.compare_properties(event_schema_name=distinct_name[0])
+                if compare_properties:
+                    self.update_event_schema_db_status(
+                        event_schema_name=distinct_name[0],
+                        db_status="alter_table_in_progress"
+                    )
+                    self.update_event_schema_properties(data={
+                        'event_schema_id': self.get_event_schema_id(event_schema_name=distinct_name[0]),
+                        'event_properties': compare_properties
+                    })
+                    self.update_event_schema_db_status(
+                        event_schema_name=distinct_name[0],
+                        db_status="create_completed"
+                    )
+            else:
+                pass
+                #  Create new record in event_schema with its properties "Create pending"
 
-    @staticmethod
-    def get_validate_column_query(table_name: str, column_name: str) -> str:
-        query = f"""SELECT 
-                        EXISTS(
-                            SELECT 
-                            FROM 
-                                information_schema.columns 
-                            WHERE 
-                                table_schema = 'public' 
-                                AND COLUMN_NAME='{column_name.lower()}' 
-                                AND table_name='{table_name.lower()}' 
+    def get_event_schema_id(self, event_schema_name):
+        results = self.db.execute(
+            f"select id from event_schema where name = '{event_schema_name}';"
+        )
+        for result in results:
+            return result[0]
+
+    def update_event_schema_properties(self, data):
+        event_schema_id = data.get("event_schema_id")
+        event_properties = data.get("event_properties")
+        for event_property in event_properties:
+            self.write_schema_property(event_property=event_property, event_schema_id=event_schema_id)
+
+    def write_schema_property(self, event_property, event_schema_id):
+        self.db.execute(
+            f"""
+                INSERT INTO 
+                    property_event_schema(
+                        name, type, updated_at, created_at, is_active, event_id)
+                VALUES (
+                        '{event_property[1]}', 
+                        'varchar', 
+                        '{datetime.now()}', 
+                        '{datetime.now()}', 
+                        true, 
+                        {event_schema_id}
                         );
-                """
-        return query
+            """
+        )
 
-    def validate_column(self, table_name: str, column_name: str) -> bool:
-        validate_column = self.db.execute(
-            self.get_validate_column_query(
-                table_name=table_name, column_name=self.clean_text(text=column_name)
+    def update_event_schema_db_status(self, event_schema_name, db_status):
+        return self.db.execute(
+            f"ALTER TABLE event_schema WHERE name = '{event_schema_name}' set db_status = '{db_status}';"
+        )
+
+    def compare_properties(self, event_schema_name):
+        schema_properties_names = [
+            sp[1]
+            for sp in self.get_schema_properties_by_event_schema_name(
+                event_schema_name=event_schema_name
             )
+        ]
+        result_properties = [
+            ep
+            for ep in self.get_event_properties_by_event_schema_name(
+                event_schema_name=event_schema_name
+            )
+            if ep[1] in schema_properties_names
+        ]
+        return result_properties
+
+    def get_schema_properties_by_event_schema_name(self, event_schema_name):
+        return self.db.execute(f"""
+            select 
+                * 
+            from 
+                property_event_schema 
+            where 
+                event_id in (select id from event_schema where name = '{event_schema_name}');
+        """)
+
+    def get_event_properties_by_event_schema_name(self, event_schema_name):
+        return self.db.execute(f"""
+            select 
+                * 
+            from 
+                event_property 
+            where 
+                event_id in (select id from user_event where name = '{event_schema_name}');
+        """)
+
+    def validate_event_schema(self, event_schema_name: str) -> bool:
+        validate_column = self.db.execute(
+            f"SELECT COUNT(1) FROM event_schema WHERE name = '{event_schema_name}';"
         )
         for result in validate_column:
             return result[0]
