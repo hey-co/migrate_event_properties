@@ -211,3 +211,7 @@ class Mapping:
         else:
             for result in validate_column:
                 return result[0]
+
+
+def lambda_handler(event, context):
+    return Mapping(event=event).handler()
