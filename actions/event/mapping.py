@@ -137,6 +137,8 @@ class Mapping:
             )
         except Exception as e:
             raise e
+        else:
+            self.db.commit()
 
     def update_event_schema_db_status(self, event_schema_name, db_status):
         try:
@@ -145,6 +147,8 @@ class Mapping:
             )
         except Exception as e:
             raise e
+        else:
+            self.db.commit()
 
     def get_schema_properties_names(self, event_schema_name):
         return [
@@ -215,3 +219,12 @@ class Mapping:
 
 def lambda_handler(event, context):
     return Mapping(event=event).handler()
+
+
+if __name__ == '__main__':
+    lambda_handler(
+        event={
+            "private_key": "nGPoVSbPAZtbawqf"
+        },
+        context={}
+    )
