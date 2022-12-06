@@ -92,10 +92,8 @@ class Mapping:
             return result[0]
 
     def update_event_schema_properties(self, data):
-        event_schema_id = data.get("event_schema_id")
-        event_properties = data.get("event_properties")
-        for event_property in event_properties:
-            self.write_schema_property(event_property=event_property, event_schema_id=event_schema_id)
+        for event_property in data.get("event_properties"):
+            self.write_schema_property(event_property=event_property, event_schema_id=data.get("event_schema_id"))
 
     def write_schema_property(self, event_property, event_schema_id):
         self.db.execute(
