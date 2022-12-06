@@ -179,7 +179,7 @@ class Mapping:
             return self.db.execute(
                 f"""
                 select 
-                    * 
+                    distinct on (name) *
                 from 
                     property_event_schema 
                 where 
@@ -194,7 +194,7 @@ class Mapping:
             return self.db.execute(
                 f"""
                 select 
-                    * 
+                    distinct on (name) *
                 from 
                     event_property 
                 where 
@@ -219,11 +219,3 @@ class Mapping:
 def lambda_handler(event, context):
     return Mapping(event=event).handler()
 
-
-if __name__ == '__main__':
-    lambda_handler(
-        event={
-            "private_key": "nGPoVSbPAZtbawqf"
-        },
-        context={}
-    )
