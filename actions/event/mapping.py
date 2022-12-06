@@ -36,11 +36,11 @@ class Mapping:
             self.db.execute(
                 f"""INSERT INTO event_schema(name, updated_at, created_at, is_active, db_status, is_migrated)
                             VALUES (
-                                '{self.clean_text(text=event_schema_name)}', 
+                                '{event_schema_name}', 
                                 '{datetime.now()}', 
                                 '{datetime.now()}', 
                                 true, 
-                                'pending_update', 
+                                'pending_create', 
                                 false
                             );
                 """
@@ -79,8 +79,17 @@ class Mapping:
                         db_status="create_completed"
                     )
             else:
-                pass
-                #  Create new record in event_schema with its properties "Create pending"
+                self.write_event_schema(event_schema_name=event_schema_name)
+                self.update_event_schema_properties(
+                    data={
+                        'event_schema_id': self.get_event_schema_id(
+                            event_schema_name=event_schema_name
+                        ),
+                        'event_properties': self.get_event_properties_by_event_schema_name(
+                            event_schema_name=event_schema_name
+                        )
+                    }
+                )
 
     def get_event_schema_id(self, event_schema_name):
         results = self.db.execute(
