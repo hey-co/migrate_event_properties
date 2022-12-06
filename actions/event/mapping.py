@@ -35,14 +35,14 @@ class Mapping:
         try:
             self.db.execute(
                 f"""INSERT INTO event_schema(name, updated_at, created_at, is_active, db_status, is_migrated)
-                            VALUES (
-                                '{event_schema_name}', 
-                                '{datetime.now()}', 
-                                '{datetime.now()}', 
-                                true, 
-                                'pending_create', 
-                                false
-                            );
+                        VALUES (
+                            '{event_schema_name}', 
+                            '{datetime.now()}', 
+                            '{datetime.now()}', 
+                            true, 
+                            'pending_create', 
+                            false
+                        );
                 """
             )
         except Exception as e:
@@ -60,36 +60,44 @@ class Mapping:
         )
         return text.lower()
 
+    def handle_valid_event_schema(self, event_schema_name):
+        compare_properties = self.compare_properties(event_schema_name=event_schema_name)
+        if compare_properties:
+            self.update_event_schema_db_status(
+                event_schema_name=event_schema_name,
+                db_status="alter_table_in_progress"
+            )
+            self.update_event_schema_properties(data={
+                'event_schema_id': self.get_event_schema_id(event_schema_name=event_schema_name),
+                'event_properties': compare_properties
+            })
+            self.update_event_schema_db_status(
+                event_schema_name=event_schema_name,
+                db_status="create_completed"
+            )
+
+    def handle_invalid_event_schema(self, event_schema_name):
+        self.write_event_schema(
+            event_schema_name=event_schema_name
+        )
+        self.update_event_schema_properties(
+            data={
+                'event_schema_id': self.get_event_schema_id(
+                    event_schema_name=event_schema_name
+                ),
+                'event_properties': self.get_event_properties_by_event_schema_name(
+                    event_schema_name=event_schema_name
+                )
+            }
+        )
+
     def handler(self):
         for distinct_name in self.get_distinct_user_event_names():
             event_schema_name = self.clean_text(text=distinct_name[0])
             if self.validate_event_schema(event_schema_name=event_schema_name):
-                compare_properties = self.compare_properties(event_schema_name=event_schema_name)
-                if compare_properties:
-                    self.update_event_schema_db_status(
-                        event_schema_name=event_schema_name,
-                        db_status="alter_table_in_progress"
-                    )
-                    self.update_event_schema_properties(data={
-                        'event_schema_id': self.get_event_schema_id(event_schema_name=event_schema_name),
-                        'event_properties': compare_properties
-                    })
-                    self.update_event_schema_db_status(
-                        event_schema_name=event_schema_name,
-                        db_status="create_completed"
-                    )
+                self.handle_valid_event_schema(event_schema_name=event_schema_name)
             else:
-                self.write_event_schema(event_schema_name=event_schema_name)
-                self.update_event_schema_properties(
-                    data={
-                        'event_schema_id': self.get_event_schema_id(
-                            event_schema_name=event_schema_name
-                        ),
-                        'event_properties': self.get_event_properties_by_event_schema_name(
-                            event_schema_name=event_schema_name
-                        )
-                    }
-                )
+                self.handle_invalid_event_schema(event_schema_name=event_schema_name)
 
     def get_event_schema_id(self, event_schema_name):
         results = self.db.execute(
