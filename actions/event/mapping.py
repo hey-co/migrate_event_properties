@@ -98,11 +98,10 @@ class Mapping:
 
     def handler(self):
         for distinct_name in self.get_distinct_user_event_names():
-            event_schema_name = self.clean_text(text=distinct_name[0])
-            if self.validate_event_schema(event_schema_name=event_schema_name):
-                self.handle_valid_event_schema(event_schema_name=event_schema_name)
+            if self.validate_event_schema(event_schema_name=distinct_name[0]):
+                self.handle_valid_event_schema(event_schema_name=distinct_name[0])
             else:
-                self.handle_invalid_event_schema(event_schema_name=event_schema_name)
+                self.handle_invalid_event_schema(event_schema_name=distinct_name[0])
 
     def get_event_schema_id(self, event_schema_name):
         results = self.db.execute(
@@ -143,7 +142,7 @@ class Mapping:
     def update_event_schema_db_status(self, event_schema_name, db_status):
         try:
             return self.db.execute(
-                f"ALTER TABLE event_schema WHERE name = '{event_schema_name}' set db_status = '{db_status}';"
+                f"UPDATE event_schema set db_status = '{db_status}' WHERE name = '{event_schema_name}';"
             )
         except Exception as e:
             raise e
