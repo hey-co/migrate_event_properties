@@ -33,7 +33,7 @@ class Mapping:
 
     def write_event_schema(self, event_schema_name):
         try:
-            results = self.db.execute(
+            self.db.execute(
                 f"""INSERT INTO event_schema(name, updated_at, created_at, is_active, db_status, is_migrated)
                             VALUES (
                                 '{self.clean_text(text=event_schema_name)}', 
@@ -49,9 +49,6 @@ class Mapping:
             raise e
         else:
             self.db.commit()
-            for result in results:
-                self.update_event_property(event_name=event_schema_name, event_schema_id=result[0])
-                return result[0]
 
     @staticmethod
     def clean_text(text: str) -> str:
@@ -65,19 +62,20 @@ class Mapping:
 
     def handler(self):
         for distinct_name in self.get_distinct_user_event_names():
-            if self.validate_event_schema(event_schema_name=distinct_name[0]):
-                compare_properties = self.compare_properties(event_schema_name=distinct_name[0])
+            event_schema_name = self.clean_text(text=distinct_name[0])
+            if self.validate_event_schema(event_schema_name=event_schema_name):
+                compare_properties = self.compare_properties(event_schema_name=event_schema_name)
                 if compare_properties:
                     self.update_event_schema_db_status(
-                        event_schema_name=distinct_name[0],
+                        event_schema_name=event_schema_name,
                         db_status="alter_table_in_progress"
                     )
                     self.update_event_schema_properties(data={
-                        'event_schema_id': self.get_event_schema_id(event_schema_name=distinct_name[0]),
+                        'event_schema_id': self.get_event_schema_id(event_schema_name=event_schema_name),
                         'event_properties': compare_properties
                     })
                     self.update_event_schema_db_status(
-                        event_schema_name=distinct_name[0],
+                        event_schema_name=event_schema_name,
                         db_status="create_completed"
                     )
             else:
