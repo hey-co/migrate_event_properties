@@ -35,14 +35,14 @@ class Mapping:
         try:
             self.db.execute(
                 f"""INSERT INTO event_schema(name, updated_at, created_at, is_active, db_status, is_migrated)
-                        VALUES (
-                            '{event_schema_name}', 
-                            '{datetime.now()}', 
-                            '{datetime.now()}', 
-                            true, 
-                            'pending_create', 
-                            false
-                        );
+                    VALUES (
+                        '{event_schema_name}', 
+                        '{datetime.now()}', 
+                        '{datetime.now()}', 
+                        true, 
+                        'pending_create', 
+                        false
+                    );
                 """
             )
         except Exception as e:
