@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 import unidecode
 
 import multitenancy
+
 load_dotenv()
 
 
@@ -25,7 +26,9 @@ class Mapping:
 
     def get_distinct_user_event_names(self):
         try:
-            distinct_names = self.db.execute("select distinct on (name) name from user_event;")
+            distinct_names = self.db.execute(
+                "select distinct on (name) name from user_event;"
+            )
         except Exception as e:
             raise e
         else:
@@ -61,33 +64,35 @@ class Mapping:
         return text.lower()
 
     def handle_valid_event_schema(self, event_schema_name):
-        compare_properties = self.compare_properties(event_schema_name=event_schema_name)
+        compare_properties = self.compare_properties(
+            event_schema_name=event_schema_name
+        )
         if compare_properties:
             self.update_event_schema_db_status(
-                event_schema_name=event_schema_name,
-                db_status="alter_table_in_progress"
+                event_schema_name=event_schema_name, db_status="alter_table_in_progress"
             )
-            self.update_event_schema_properties(data={
-                'event_schema_id': self.get_event_schema_id(event_schema_name=event_schema_name),
-                'event_properties': compare_properties
-            })
+            self.update_event_schema_properties(
+                data={
+                    "event_schema_id": self.get_event_schema_id(
+                        event_schema_name=event_schema_name
+                    ),
+                    "event_properties": compare_properties,
+                }
+            )
             self.update_event_schema_db_status(
-                event_schema_name=event_schema_name,
-                db_status="create_completed"
+                event_schema_name=event_schema_name, db_status="create_completed"
             )
 
     def handle_invalid_event_schema(self, event_schema_name):
-        self.write_event_schema(
-            event_schema_name=event_schema_name
-        )
+        self.write_event_schema(event_schema_name=event_schema_name)
         self.update_event_schema_properties(
             data={
-                'event_schema_id': self.get_event_schema_id(
+                "event_schema_id": self.get_event_schema_id(
                     event_schema_name=event_schema_name
                 ),
-                'event_properties': self.get_event_properties_by_event_schema_name(
+                "event_properties": self.get_event_properties_by_event_schema_name(
                     event_schema_name=event_schema_name
-                )
+                ),
             }
         )
 
@@ -95,13 +100,9 @@ class Mapping:
         for distinct_name in self.get_distinct_user_event_names():
             event_schema_name = self.clean_text(text=distinct_name[0])
             if self.validate_event_schema(event_schema_name=event_schema_name):
-                self.handle_valid_event_schema(
-                    event_schema_name=event_schema_name
-                )
+                self.handle_valid_event_schema(event_schema_name=event_schema_name)
             else:
-                self.handle_invalid_event_schema(
-                    event_schema_name=event_schema_name
-                )
+                self.handle_invalid_event_schema(event_schema_name=event_schema_name)
 
     def get_event_schema_id(self, event_schema_name):
         results = self.db.execute(
@@ -114,7 +115,7 @@ class Mapping:
         for event_property in data.get("event_properties"):
             self.write_schema_property(
                 event_property=event_property,
-                event_schema_id=data.get("event_schema_id")
+                event_schema_id=data.get("event_schema_id"),
             )
 
     def write_schema_property(self, event_property, event_schema_id):
@@ -146,44 +147,57 @@ class Mapping:
             raise e
 
     def get_schema_properties_names(self, event_schema_name):
-        return [sp[1] for sp in self.get_schema_properties_by_event_schema_name(event_schema_name=event_schema_name)]
+        return [
+            sp[1]
+            for sp in self.get_schema_properties_by_event_schema_name(
+                event_schema_name=event_schema_name
+            )
+        ]
 
     def get_result_properties(self, schema_properties_names, event_schema_name):
         return [
             ep
-            for ep in self.get_event_properties_by_event_schema_name(event_schema_name=event_schema_name)
+            for ep in self.get_event_properties_by_event_schema_name(
+                event_schema_name=event_schema_name
+            )
             if ep[1] in schema_properties_names
         ]
 
     def compare_properties(self, event_schema_name):
         return self.get_result_properties(
-            schema_properties_names=self.get_schema_properties_names(event_schema_name=event_schema_name),
-            event_schema_name=event_schema_name
+            schema_properties_names=self.get_schema_properties_names(
+                event_schema_name=event_schema_name
+            ),
+            event_schema_name=event_schema_name,
         )
 
     def get_schema_properties_by_event_schema_name(self, event_schema_name):
         try:
-            return self.db.execute(f"""
+            return self.db.execute(
+                f"""
                 select 
                     * 
                 from 
                     property_event_schema 
                 where 
                     event_id in (select id from event_schema where name = '{event_schema_name}');
-            """)
+            """
+            )
         except Exception as e:
             raise e
 
     def get_event_properties_by_event_schema_name(self, event_schema_name):
         try:
-            return self.db.execute(f"""
+            return self.db.execute(
+                f"""
                 select 
                     * 
                 from 
                     event_property 
                 where 
                     event_id in (select id from user_event where name = '{event_schema_name}');
-            """)
+            """
+            )
         except Exception as e:
             raise e
 
