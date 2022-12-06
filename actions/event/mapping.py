@@ -145,21 +145,21 @@ class Mapping:
         except Exception as e:
             raise e
 
-    def compare_properties(self, event_schema_name):
-        schema_properties_names = [
-            sp[1]
-            for sp in self.get_schema_properties_by_event_schema_name(
-                event_schema_name=event_schema_name
-            )
-        ]
-        result_properties = [
+    def get_schema_properties_names(self, event_schema_name):
+        return [sp[1] for sp in self.get_schema_properties_by_event_schema_name(event_schema_name=event_schema_name)]
+
+    def get_result_properties(self, schema_properties_names, event_schema_name):
+        return [
             ep
-            for ep in self.get_event_properties_by_event_schema_name(
-                event_schema_name=event_schema_name
-            )
+            for ep in self.get_event_properties_by_event_schema_name(event_schema_name=event_schema_name)
             if ep[1] in schema_properties_names
         ]
-        return result_properties
+
+    def compare_properties(self, event_schema_name):
+        return self.get_result_properties(
+            schema_properties_names=self.get_schema_properties_names(event_schema_name=event_schema_name),
+            event_schema_name=event_schema_name
+        )
 
     def get_schema_properties_by_event_schema_name(self, event_schema_name):
         try:
