@@ -1,5 +1,5 @@
 import pytest
-from actions.event import migration
+from event.actions import migration
 
 
 @pytest.fixture()
