@@ -13,6 +13,13 @@ class TypeDbStatus(str, Enum):
     STATIC = "static"
 
 
+class TypeColumnChoices(str, Enum):
+    TEXT = "varchar"
+    FLOAT = "numeric"
+    DATE = "date"
+    INTEGER = "integer"
+
+
 class EventSchema(BaseModel):
     id: Optional[int]
     name: str
@@ -23,6 +30,20 @@ class EventSchema(BaseModel):
     created_at: Union[datetime, date, None]
     is_active: bool
     is_migrated: bool
+
+    class Config:
+        orm_mode = True
+
+
+class EventSchemaProperty(BaseModel):
+    id: Optional[int]
+    name: str
+    event_id: int
+    help_name: Optional[str]
+    type: TypeColumnChoices
+    updated_at: Union[datetime, date, None]
+    created_at: Union[datetime, date, None]
+    is_active: bool
 
     class Config:
         orm_mode = True
