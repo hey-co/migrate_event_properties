@@ -15,7 +15,7 @@ class EventSchema(Base):
     name = Column(String(255), nullable=False)
     help_name = Column(String(254), nullable=True)
     description = Column(String(2000), nullable=True)
-    status = Column(String, nullable=False)
+    status = Column(String(100), nullable=False)
     created_at = Column(DateTime, nullable=False, default=datetime.now())
     updated_at = Column(DateTime, nullable=False, default=datetime.now())
     is_active = Column(Boolean, default=True, nullable=False)
@@ -23,3 +23,19 @@ class EventSchema(Base):
 
     def __repr__(self):
         return "<Event schema(id='%s', name='%s' )>" % (self.id, self.name)
+
+
+class EventSchemaProperty(Base):
+    __tablename__ = "property_event_schema"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(5000), nullable=False)
+    event_id = Column(Integer, nullable=False)
+    help_name = Column(String(254), nullable=True)
+    type = Column(String(100), nullable=False)
+    created_at = Column(DateTime, nullable=False, default=datetime.now())
+    updated_at = Column(DateTime, nullable=False, default=datetime.now())
+    is_active = Column(Boolean, default=True, nullable=False)
+
+    def __repr__(self):
+        return "<Property Event schema(id='%s', name='%s' )>" % (self.id, self.name)
