@@ -1,4 +1,4 @@
-from enum import IntEnum, Enum
+from enum import Enum
 from datetime import datetime, date
 from typing import Optional, Union
 
@@ -63,3 +63,14 @@ class UserEvent(BaseModel):
     class Config:
         orm_mode = True
 
+
+class PropertyEvent(BaseModel):
+    id: Optional[int]
+    name: Optional[str]
+    value: Optional[str]
+    event_id: int
+    updated_at: Union[datetime, date, None]
+    created_at: Union[datetime, date, None]
+
+    class Config:
+        orm_mode = True
