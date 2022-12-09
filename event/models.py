@@ -39,3 +39,20 @@ class EventSchemaProperty(Base):
 
     def __repr__(self):
         return "<Property Event schema(id='%s', name='%s' )>" % (self.id, self.name)
+
+
+class Event(Base):
+    __tablename__ = "user_event"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(128), nullable=True)
+    value = Column(String(2000), nullable=True)
+    email = Column(String(2000), nullable=True)
+    valid = Column(String(100), nullable=True)
+    migrated = Column(Boolean, default=False, nullable=True)
+    user_id = Column(Integer, nullable=False)
+    created_at = Column(DateTime, nullable=False, default=datetime.now())
+    updated_at = Column(DateTime, nullable=False, default=datetime.now())
+
+    def __repr__(self):
+        return "<User Event schema(id='%s', name='%s' )>" % (self.id, self.name)
