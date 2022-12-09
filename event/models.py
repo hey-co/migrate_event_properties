@@ -20,3 +20,6 @@ class EventSchema(Base):
     updated_at = Column(DateTime, nullable=False, default=datetime.now())
     is_active = Column(Boolean, default=True, nullable=False)
     is_migrated = Column(Boolean, default=False, nullable=False)
+
+    def __repr__(self):
+        return "<Event schema(id='%s', name='%s' )>" % (self.id, self.name)
