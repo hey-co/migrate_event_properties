@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from sqlalchemy import Column, Integer, String
-from sqlalchemy import DateTime, Text, Boolean
+from sqlalchemy import DateTime, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 
 
