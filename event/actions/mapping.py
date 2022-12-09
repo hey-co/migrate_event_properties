@@ -204,9 +204,7 @@ class Mapping:
 
     def validate_event_schema(self, event_schema_name: str) -> bool:
         try:
-            validate_column = self.db.execute(
-                f"SELECT COUNT(1) FROM event_schema WHERE name = '{event_schema_name}';"
-            )
+            validate_column = self.db.query(models.EventSchema).filter_by(name=event_schema_name).first()
         except Exception as e:
             raise e
         else:
