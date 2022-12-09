@@ -47,3 +47,19 @@ class EventSchemaProperty(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class UserEvent(BaseModel):
+    id: Optional[int]
+    name: Optional[str]
+    value: Optional[str]
+    email: Optional[str]
+    valid: Optional[str]
+    migrated: Optional[bool]
+    user_id: int
+    updated_at: Union[datetime, date, None]
+    created_at: Union[datetime, date, None]
+
+    class Config:
+        orm_mode = True
+
