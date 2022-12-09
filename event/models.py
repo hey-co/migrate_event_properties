@@ -55,4 +55,18 @@ class Event(Base):
     updated_at = Column(DateTime, nullable=False, default=datetime.now())
 
     def __repr__(self):
-        return "<User Event schema(id='%s', name='%s' )>" % (self.id, self.name)
+        return "<User Event(id='%s', name='%s' )>" % (self.id, self.name)
+
+
+class PropertyEvent(Base):
+    __tablename__ = "event_property"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(128), nullable=True)
+    value = Column(String(2000), nullable=True)
+    event_id = Column(Integer, nullable=False)
+    created_at = Column(DateTime, nullable=False, default=datetime.now())
+    updated_at = Column(DateTime, nullable=False, default=datetime.now())
+
+    def __repr__(self):
+        return "<Event property(id='%s', name='%s' )>" % (self.id, self.name)
