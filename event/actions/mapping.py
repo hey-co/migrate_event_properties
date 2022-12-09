@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 import unidecode
 
 import multitenancy
-
+from event import models
 load_dotenv()
 
 
@@ -26,9 +26,7 @@ class Mapping:
 
     def get_distinct_user_event_names(self):
         try:
-            distinct_names = self.db.execute(
-                "select distinct on (name) name from user_event;"
-            )
+            distinct_names = self.db.query(models.Event.name).distinct()
         except Exception as e:
             raise e
         else:
