@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 import unidecode
 
 import multitenancy
-from event import models
+from event import models, schemas
 load_dotenv()
 
 
@@ -117,21 +117,19 @@ class Mapping:
 
     def write_schema_property(self, event_property, event_schema_id):
         try:
-            self.db.execute(
-                f"""
-                    INSERT INTO 
-                        property_event_schema(
-                            name, type, updated_at, created_at, is_active, event_id)
-                    VALUES (
-                            '{event_property[1]}', 
-                            'varchar', 
-                            '{datetime.now()}', 
-                            '{datetime.now()}', 
-                            true, 
-                            {event_schema_id}
-                            );
-                """
+            schema_property = pydantic.parse_obj_as(
+                schemas.EventSchemaProperty,
+                {
+                    "name": event_property[1],
+                    "type": "varchar",
+                    "updated_at": datetime.now(),
+                    "created_at": datetime.now(),
+                    "is_active": True,
+                    "event_id": event_schema_id
+                }
             )
+            new_schema_property = models.EventSchemaProperty(**schema_property.dict())
+            self.db.add(new_schema_property)
         except Exception as e:
             raise e
         else:
@@ -141,7 +139,6 @@ class Mapping:
         try:
             event_schema = self.db.query(models.EventSchema).filter_by(name=event_schema_name).first()
             event_schema.db_status = db_status
-            self.db.commit()
             return event_schema
         except Exception as e:
             raise e
