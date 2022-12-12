@@ -116,7 +116,7 @@ class Mapping:
             schema_property = pydantic.parse_obj_as(
                 schemas.EventSchemaProperty,
                 {
-                    "name": event_property[1],
+                    "name": event_property[0],
                     "type": schemas.DataTypeColumn.TEXT,
                     "db_status": schemas.SqlStructureDbStatus.CREATE_PENDING,
                     "migrate_status": schemas.DataDbMigrateStatus.DB_PENDING,
@@ -135,7 +135,7 @@ class Mapping:
 
     def get_schema_properties_names(self, event_schema_name):
         return [
-            sp[1]
+            sp[0]
             for sp in self.get_schema_properties_by_event_schema_name(
                 event_schema_name=event_schema_name
             )
@@ -147,7 +147,7 @@ class Mapping:
             for ep in self.get_event_properties_by_event_schema_name(
                 event_schema_name=event_schema_name
             )
-            if ep[1] in schema_properties_names
+            if ep[0] in schema_properties_names
         ]
 
     def compare_properties(self, event_schema_name):
