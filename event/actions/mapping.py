@@ -184,16 +184,11 @@ class Mapping:
 
     def get_event_properties_by_event_schema_name(self, event_schema_name):
         try:
-            return self.db.execute(
-                f"""
-                select 
-                    distinct on (name) *
-                from 
-                    event_property 
-                where 
-                    event_id in (select id from user_event where name = '{event_schema_name}');
-            """
-            )
+            return self.db.query(models.PropertyEvent.name).filter(
+                models.PropertyEvent.event_id.in_(
+                    self.db.query(models.Event.id).filter_by(name=event_schema_name)
+                )
+            ).distinct()
         except Exception as e:
             raise e
 
