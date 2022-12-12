@@ -43,6 +43,7 @@ class Mapping:
                     "created_at": datetime.now(),
                     "is_active": True,
                     "db_status": schemas.SqlStructureDbStatus.CREATE_PENDING,
+                    "migrate_status": schemas.DataDbMigrateStatus.DB_PENDING,
                     "is_migrated": False
                 }
             )
@@ -117,6 +118,8 @@ class Mapping:
                 {
                     "name": event_property[1],
                     "type": schemas.DataTypeColumn.TEXT,
+                    "db_status": schemas.SqlStructureDbStatus.CREATE_PENDING,
+                    "migrate_status": schemas.DataDbMigrateStatus.DB_PENDING,
                     "updated_at": datetime.now(),
                     "created_at": datetime.now(),
                     "is_active": True,
