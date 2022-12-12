@@ -102,11 +102,10 @@ class Mapping:
                 self.handle_invalid_event_schema(event_schema_name=distinct_name[0])
 
     def get_event_schema_id(self, event_schema_name):
-        results = self.db.execute(
-            f"select id from event_schema where name = '{event_schema_name}';"
-        )
-        for result in results:
-            return result[0]
+        try:
+            return self.db.query(models.EventSchema).filter_by(name=event_schema_name).first().id
+        except Exception as e:
+            raise e
 
     def update_event_schema_properties(self, data):
         for event_property in data.get("event_properties"):
