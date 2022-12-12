@@ -38,7 +38,7 @@ class Mapping:
             event_schema = pydantic.parse_obj_as(
                 schemas.EventSchema,
                 {
-                    "name": event_schema_name[1],
+                    "name": event_schema_name,
                     "updated_at": datetime.now(),
                     "created_at": datetime.now(),
                     "is_active": True,
