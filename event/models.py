@@ -4,6 +4,8 @@ from sqlalchemy import Column, Integer, String
 from sqlalchemy import DateTime, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 
+from event import schemas
+
 
 Base = declarative_base()
 
@@ -15,7 +17,8 @@ class EventSchema(Base):
     name = Column(String(255), nullable=False)
     help_name = Column(String(254), nullable=True)
     description = Column(String(2000), nullable=True)
-    db_status = Column(String(100), nullable=False)
+    db_status = Column(Integer, nullable=False)
+    migrate_status = Column(Integer, nullable=False)
     created_at = Column(DateTime, nullable=False, default=datetime.now())
     updated_at = Column(DateTime, nullable=False, default=datetime.now())
     is_active = Column(Boolean, default=True, nullable=False)
@@ -33,6 +36,8 @@ class EventSchemaProperty(Base):
     event_id = Column(Integer, nullable=False)
     help_name = Column(String(254), nullable=True)
     type = Column(String(100), nullable=False)
+    db_status = Column(Integer, nullable=False)
+    migrate_status = Column(Integer, nullable=False)
     created_at = Column(DateTime, nullable=False, default=datetime.now())
     updated_at = Column(DateTime, nullable=False, default=datetime.now())
     is_active = Column(Boolean, default=True, nullable=False)
