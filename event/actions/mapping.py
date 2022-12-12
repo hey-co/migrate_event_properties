@@ -34,18 +34,19 @@ class Mapping:
 
     def write_event_schema(self, event_schema_name):
         try:
-            self.db.execute(
-                f"""INSERT INTO event_schema(name, updated_at, created_at, is_active, db_status, is_migrated)
-                    VALUES (
-                        '{event_schema_name}', 
-                        '{datetime.now()}', 
-                        '{datetime.now()}', 
-                        true, 
-                        'pending_create', 
-                        false
-                    );
-                """
+            event_schema = pydantic.parse_obj_as(
+                schemas.EventSchema,
+                {
+                    "name": event_schema_name[1],
+                    "updated_at": datetime.now(),
+                    "created_at": datetime.now(),
+                    "is_active": True,
+                    "db_status": 'pending_create',
+                    "is_migrated": False
+                }
             )
+            new_event_schema = models.EventSchema(**event_schema.dict())
+            self.db.add(new_event_schema)
         except Exception as e:
             raise e
         else:
