@@ -15,7 +15,7 @@ class EventSchema(Base):
     name = Column(String(255), nullable=False)
     help_name = Column(String(254), nullable=True)
     description = Column(String(2000), nullable=True)
-    status = Column(String(100), nullable=False)
+    db_status = Column(String(100), nullable=False)
     created_at = Column(DateTime, nullable=False, default=datetime.now())
     updated_at = Column(DateTime, nullable=False, default=datetime.now())
     is_active = Column(Boolean, default=True, nullable=False)
