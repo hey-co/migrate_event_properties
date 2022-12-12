@@ -139,9 +139,10 @@ class Mapping:
 
     def update_event_schema_db_status(self, event_schema_name, db_status):
         try:
-            return self.db.execute(
-                f"UPDATE event_schema set db_status = '{db_status}' WHERE name = '{event_schema_name}';"
-            )
+            event_schema = self.db.query(models.EventSchema).filter_by(name=event_schema_name).first()
+            event_schema.db_status = db_status
+            self.db.commit()
+            return event_schema
         except Exception as e:
             raise e
         else:
