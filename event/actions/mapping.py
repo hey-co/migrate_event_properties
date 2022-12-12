@@ -67,10 +67,6 @@ class Mapping:
             event_schema_name=event_schema_name
         )
         if compare_properties:
-            self.update_event_schema_db_status(
-                event_schema_name=event_schema_name,
-                db_status=schemas.SqlStructureDbStatus.ALTER_TABLE_IN_PROGRESS
-            )
             self.update_event_schema_properties(
                 data={
                     "event_schema_id": self.get_event_schema_id(
@@ -78,9 +74,6 @@ class Mapping:
                     ),
                     "event_properties": compare_properties,
                 }
-            )
-            self.update_event_schema_db_status(
-                event_schema_name=event_schema_name, db_status=schemas.SqlStructureDbStatus.CREATE_COMPLETED
             )
 
     def handle_invalid_event_schema(self, event_schema_name):
@@ -131,16 +124,6 @@ class Mapping:
             )
             new_schema_property = models.EventSchemaProperty(**schema_property.dict())
             self.db.add(new_schema_property)
-        except Exception as e:
-            raise e
-        else:
-            self.db.commit()
-
-    def update_event_schema_db_status(self, event_schema_name, db_status):
-        try:
-            event_schema = self.db.query(models.EventSchema).filter_by(name=event_schema_name).first()
-            event_schema.db_status = db_status
-            return event_schema
         except Exception as e:
             raise e
         else:
