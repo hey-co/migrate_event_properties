@@ -34,8 +34,8 @@ class EventSchema(BaseModel):
     name: str
     help_name: Optional[str]
     description: Optional[str]
-    db_status: SqlStructureDbStatus
-    migrate_status: DataDbMigrateStatus
+    db_status: Optional[SqlStructureDbStatus]
+    migrate_status: Optional[DataDbMigrateStatus]
     updated_at: Union[datetime, date, None]
     created_at: Union[datetime, date, None]
     is_active: bool
@@ -51,8 +51,8 @@ class EventSchemaProperty(BaseModel):
     event_id: int
     help_name: Optional[str]
     type: DataTypeColumn
-    db_status: SqlStructureDbStatus
-    migrate_status: DataDbMigrateStatus
+    db_status: Optional[SqlStructureDbStatus]
+    migrate_status: Optional[DataDbMigrateStatus]
     updated_at: Union[datetime, date, None]
     created_at: Union[datetime, date, None]
     is_active: bool
