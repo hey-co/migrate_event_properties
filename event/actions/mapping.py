@@ -3,6 +3,7 @@ import os
 
 from dotenv import load_dotenv
 import unidecode
+import pydantic
 
 import multitenancy
 from event import models, schemas
@@ -180,8 +181,7 @@ class Mapping:
         except Exception as e:
             raise e
         else:
-            for result in validate_column:
-                return result[0]
+            return validate_column
 
 
 def lambda_handler(event, context):
