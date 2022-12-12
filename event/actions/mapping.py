@@ -147,7 +147,7 @@ class Mapping:
             for ep in self.get_event_properties_by_event_schema_name(
                 event_schema_name=event_schema_name
             )
-            if ep[0] in schema_properties_names
+            if ep[0] not in schema_properties_names
         ]
 
     def compare_properties(self, event_schema_name):
