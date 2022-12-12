@@ -41,7 +41,7 @@ class Mapping:
                     "updated_at": datetime.now(),
                     "created_at": datetime.now(),
                     "is_active": True,
-                    "db_status": 'pending_create',
+                    "db_status": schemas.SqlStructureDbStatus.CREATE_PENDING,
                     "is_migrated": False
                 }
             )
@@ -68,7 +68,8 @@ class Mapping:
         )
         if compare_properties:
             self.update_event_schema_db_status(
-                event_schema_name=event_schema_name, db_status="alter_table_in_progress"
+                event_schema_name=event_schema_name,
+                db_status=schemas.SqlStructureDbStatus.ALTER_TABLE_IN_PROGRESS
             )
             self.update_event_schema_properties(
                 data={
@@ -79,7 +80,7 @@ class Mapping:
                 }
             )
             self.update_event_schema_db_status(
-                event_schema_name=event_schema_name, db_status="create_completed"
+                event_schema_name=event_schema_name, db_status=schemas.SqlStructureDbStatus.CREATE_COMPLETED
             )
 
     def handle_invalid_event_schema(self, event_schema_name):
@@ -121,7 +122,7 @@ class Mapping:
                 schemas.EventSchemaProperty,
                 {
                     "name": event_property[1],
-                    "type": "varchar",
+                    "type": schemas.DataTypeColumn.TEXT,
                     "updated_at": datetime.now(),
                     "created_at": datetime.now(),
                     "is_active": True,
