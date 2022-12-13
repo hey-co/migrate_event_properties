@@ -190,8 +190,27 @@ class Mapping:
             raise e
 
     def validate_event_schema(self, event_schema_name: str) -> bool:
+        event_schema_name_validation = self.validate_event_schema_by_name(
+            event_schema_name=event_schema_name
+        )
+        event_schema_help_name_validation = self.validate_event_schema_by_help_name(
+            event_schema_name=event_schema_name
+        )
+        return event_schema_name_validation or event_schema_help_name_validation
+
+    def validate_event_schema_by_help_name(self, event_schema_name):
         try:
-            validate_column = self.db.query(models.EventSchema).filter_by(name=event_schema_name).first()
+            validate_column = self.db.query(models.EventSchema).filter_by(help_name=event_schema_name).first()
+        except Exception as e:
+            raise e
+        else:
+            return validate_column
+
+    def validate_event_schema_by_name(self, event_schema_name):
+        try:
+            validate_column = self.db.query(models.EventSchema).filter_by(
+                name=self.clean_text(text=event_schema_name)
+            ).first()
         except Exception as e:
             raise e
         else:
