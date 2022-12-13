@@ -141,22 +141,33 @@ class Mapping:
             )
         ]
 
-    def get_result_properties(self, schema_properties_names, event_schema_name):
-        return [
-            ep
-            for ep in self.get_event_properties_by_event_schema_name(
-                event_schema_name=event_schema_name
-            )
-            if ep[0] not in schema_properties_names
-        ]
+    def get_result_properties(self, schema_properties_names, schema_properties_help_names, event_schema_name):
+        result_properties = []
+        for ep in self.get_event_properties_by_event_schema_name(event_schema_name=event_schema_name):
+            if self.clean_text(text=ep[0]) not in schema_properties_names or ep[0] not in schema_properties_help_names:
+                result_properties.append(ep)
+        return result_properties
 
     def compare_properties(self, event_schema_name):
         return self.get_result_properties(
             schema_properties_names=self.get_schema_properties_names(
                 event_schema_name=event_schema_name
             ),
+            schema_properties_help_names=self.get_schema_properties_help_names(
+                event_schema_name=event_schema_name
+            ),
             event_schema_name=event_schema_name,
         )
+
+    def get_schema_properties_help_names(self, event_schema_name):
+        try:
+            return self.db.query(models.EventSchemaProperty.help_name).filter(
+                models.EventSchemaProperty.event_id.in_(
+                    self.db.query(models.EventSchema.id).filter_by(name=event_schema_name)
+                )
+            ).distinct()
+        except Exception as e:
+            raise e
 
     def get_schema_properties_by_event_schema_name(self, event_schema_name):
         try:
@@ -194,7 +205,7 @@ def lambda_handler(event, context):
 if __name__ == '__main__':
     lambda_handler(
         event={
-            "private_key": "nGPoVSbPAZtbawqf"
+            "private_key": "5Aj0fq2CyNqM7NCE"
         },
         context={}
     )
