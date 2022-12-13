@@ -101,7 +101,7 @@ class Mapping:
 
     def get_event_schema_id(self, event_schema_name):
         try:
-            return self.db.query(models.EventSchema).filter_by(name=event_schema_name).first().id
+            return self.db.query(models.EventSchema).filter_by(name=self.clean_text(text=event_schema_name)).first().id
         except Exception as e:
             raise e
 
