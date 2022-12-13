@@ -162,10 +162,18 @@ class Mapping:
         )
 
     def get_schema_properties_help_names(self, event_schema_name):
+        return [
+            sp[0]
+            for sp in self.get_schema_properties_help_names_query(
+                event_schema_name=event_schema_name
+            )
+        ]
+
+    def get_schema_properties_help_names_query(self, event_schema_name):
         try:
             return self.db.query(models.EventSchemaProperty.help_name).filter(
                 models.EventSchemaProperty.event_id.in_(
-                    self.db.query(models.EventSchema.id).filter_by(name=event_schema_name)
+                    self.db.query(models.EventSchema.id).filter_by(name=self.clean_text(text=event_schema_name))
                 )
             ).distinct()
         except Exception as e:
@@ -175,7 +183,7 @@ class Mapping:
         try:
             return self.db.query(models.EventSchemaProperty.name).filter(
                 models.EventSchemaProperty.event_id.in_(
-                    self.db.query(models.EventSchema.id).filter_by(name=event_schema_name)
+                    self.db.query(models.EventSchema.id).filter_by(name=self.clean_text(text=event_schema_name))
                 )
             ).distinct()
         except Exception as e:
