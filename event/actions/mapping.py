@@ -38,9 +38,10 @@ class Mapping:
             event_schema = pydantic.parse_obj_as(
                 schemas.EventSchema,
                 {
-                    "name": event_schema_name,
+                    "name": self.clean_text(text=event_schema_name),
                     "updated_at": datetime.now(),
                     "created_at": datetime.now(),
+                    "help_name": event_schema_name,
                     "is_active": True,
                     "db_status": schemas.SqlStructureDbStatus.CREATE_PENDING,
                     "migrate_status": schemas.DataDbMigrateStatus.DB_PENDING,
@@ -116,10 +117,11 @@ class Mapping:
             schema_property = pydantic.parse_obj_as(
                 schemas.EventSchemaProperty,
                 {
-                    "name": event_property[0],
+                    "name": self.clean_text(text=event_property[0]),
                     "type": schemas.DataTypeColumn.TEXT,
                     "db_status": schemas.SqlStructureDbStatus.CREATE_PENDING,
                     "migrate_status": schemas.DataDbMigrateStatus.DB_PENDING,
+                    "help_name": event_property[0],
                     "updated_at": datetime.now(),
                     "created_at": datetime.now(),
                     "is_active": True,
@@ -224,7 +226,7 @@ def lambda_handler(event, context):
 if __name__ == '__main__':
     lambda_handler(
         event={
-            "private_key": "5Aj0fq2CyNqM7NCE"
+            "private_key": "nGPoVSbPAZtbawqf"
         },
         context={}
     )
