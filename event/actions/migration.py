@@ -2,10 +2,11 @@ from typing import List, Tuple, Dict, Any
 from data_base import main_db
 from sqlalchemy import create_engine
 
-import unidecode
 import pandas as pd
 import psycopg2
 import os
+
+from event import schemas as validators
 
 
 class Migration:
@@ -174,7 +175,14 @@ class Migration:
     def get_migrated_schemas(self) -> List[Tuple[Any]]:
         try:
             event_schemas = self.db_instance.handler(
-                query="SELECT * FROM event_schema WHERE db_status='pending_create' and name='SGC_SPEC';"
+                query=f"""
+                    SELECT 
+                        * 
+                    FROM 
+                        event_schema 
+                    WHERE 
+                        db_status='{validators.SqlStructureDbStatus.CREATE_PENDING}' and name='SGC_SPEC';
+                    """
             )
         except Exception as e:
             raise e
