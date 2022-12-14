@@ -86,7 +86,6 @@ class Migration:
         conn = create_engine(self.get_str_conn()).connect()
         conn1 = self.get_insert_conn()
         event_ids = list(pivot["id"])
-        pivot.to_csv("pivot.csv")
         pivot.to_sql(schema_name, conn, if_exists="append", index=False)
         self.update_user_events_migrated(event_ids=event_ids)
         conn1.commit()
