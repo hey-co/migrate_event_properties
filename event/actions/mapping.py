@@ -234,7 +234,7 @@ def lambda_handler(event, context):
 if __name__ == '__main__':
     lambda_handler(
         event={
-            "private_key": "nGPoVSbPAZtbawqf"
+            "private_key": "5Aj0fq2CyNqM7NCE"
         },
         context={}
     )

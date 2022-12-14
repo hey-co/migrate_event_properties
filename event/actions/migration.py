@@ -97,8 +97,8 @@ class Migration:
         conn = psycopg2.connect(
             database="hey_elcolombiano",
             user="maiq",
-            password="DevInstanceHey$",
-            host="test-events-migration.csry9lg2mjjk.us-east-1.rds.amazonaws.com",
+            password="qwerty123.",
+            host="migration-testing.ch3slpycdtsd.us-east-1.rds.amazonaws.com",
             port="5432",
         )
         conn.autocommit = True
@@ -107,8 +107,8 @@ class Migration:
     @staticmethod
     def get_str_conn():
         user = "maiq"
-        password = "DevInstanceHey$"
-        host = "test-events-migration.csry9lg2mjjk.us-east-1.rds.amazonaws.com"
+        password = "qwerty123."
+        host = "migration-testing.ch3slpycdtsd.us-east-1.rds.amazonaws.com"
         name = "hey_elcolombiano"
         conn_string = f"postgresql://{user}:{password}@{host}/{name}"
         return conn_string
@@ -143,7 +143,7 @@ class Migration:
                         FROM
                           user_event
                         WHERE
-                          name = ''{schema_name}''
+                          name = ''{schema_name.upper()}''
                           AND migrated = false
                           AND valid = ''validated''
                         LIMIT
@@ -157,7 +157,7 @@ class Migration:
         generic_properties_query = f"""
             SELECT a
             FROM (
-                values {", ".join([f"(''{sp[1]}'')" for sp in schema_properties])}
+                values {", ".join([f"(''{sp[1].upper()}'')" for sp in schema_properties])}
             ) s(a);
         """
         return generic_properties_query
@@ -181,7 +181,7 @@ class Migration:
                     FROM 
                         event_schema 
                     WHERE 
-                        db_status='{validators.SqlStructureDbStatus.CREATE_PENDING}' and name='SGC_SPEC';
+                        db_status='{validators.SqlStructureDbStatus.CREATE_PENDING}' and name='sgc_spec';
                     """
             )
         except Exception as e:
