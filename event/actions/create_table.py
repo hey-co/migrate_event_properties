@@ -101,7 +101,7 @@ class Table:
 
     @staticmethod
     def get_varchar_line(column: Tuple[Any]) -> str:
-        return f"{column[0]} {column[1]} 255"
+        return f"{column[0]} {column[1]}(255)"
 
     @staticmethod
     def get_normal_line(column: Tuple[Any]) -> str:
@@ -109,5 +109,5 @@ class Table:
 
 
 if __name__ == "__main__":
-    table = Table(name='SGC_SPEC')
+    table = Table(name='sgc_spec')
     print(table.build_table())
