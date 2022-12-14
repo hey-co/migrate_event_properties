@@ -26,7 +26,7 @@ class Migration:
 
             self.insert_pivot(
                 pivot=self.get_pivot_insert(data=data),
-                schema_name=schema[1].lower(),
+                schema_name=schema[1],
             )
 
     def get_pivot_insert(self, data: Dict[str, Any]) -> pd.DataFrame:
@@ -52,13 +52,13 @@ class Migration:
             ),
             "schema_name": schema_name,
             "generic_properties": self.__get_generic_properties(schema_properties=schema_properties),
-            "name_columns": [self.clean_text(gp[1]).lower() for gp in schema_properties],
+            "name_columns": [gp[1] for gp in schema_properties],
         }
         return data
 
     def get_pivot_columns(self, schema_properties) -> str:
         columns = "event_id integer, " + ", ".join(
-            [f'"{self.clean_text(text=gp[1].upper())}" {gp[2]}' for gp in schema_properties]
+            [f'"{gp[1]}" {gp[2]}' for gp in schema_properties]
         )
         return columns
 
@@ -86,7 +86,7 @@ class Migration:
         conn1 = self.get_insert_conn()
         event_ids = list(pivot["id"])
         pivot.to_csv("pivot.csv")
-        pivot.to_sql(schema_name.lower(), conn, if_exists="append", index=False)
+        pivot.to_sql(schema_name, conn, if_exists="append", index=False)
         self.update_user_events_migrated(event_ids=event_ids)
         conn1.commit()
         conn1.close()
@@ -156,7 +156,7 @@ class Migration:
         generic_properties_query = f"""
             SELECT a
             FROM (
-                values {", ".join([f"(''{self.clean_text(text=sp[1])}'')" for sp in schema_properties])}
+                values {", ".join([f"(''{sp[1]}'')" for sp in schema_properties])}
             ) s(a);
         """
         return generic_properties_query
@@ -180,16 +180,6 @@ class Migration:
             raise e
         else:
             return event_schemas
-
-    @staticmethod
-    def clean_text(text: str) -> str:
-        text = unidecode.unidecode(
-            text.replace("|", "")
-            .replace(" ", "_")
-            .replace("__", "_")
-            .replace("___", "_")
-        )
-        return text.upper()
 
     @staticmethod
     def get_data_frame(data: List[Tuple[Any]], columns: List[str]) -> pd.DataFrame:
