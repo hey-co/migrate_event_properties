@@ -1,11 +1,10 @@
 from typing import Any, List, Tuple
 from data_base import main_db
-import unidecode
 
 
 class Table:
     def __init__(self, name: str):
-        self.name = self.clean_name(name=name)
+        self.name = name
         self.conn = main_db.DBInstance(public_key="kKS0DfTKpE8TqUZs")
 
     def build_table(self) -> str:
@@ -53,7 +52,7 @@ class Table:
                             SELECT 
                             FROM 
                                 information_schema.tables 
-                            WHERE table_schema = 'public' AND table_name = '{self.name.lower()}'
+                            WHERE table_schema = 'public' AND table_name = '{self.name}'
                         );
                 """
         return query
@@ -67,8 +66,8 @@ class Table:
                                 information_schema.columns 
                             WHERE 
                                 table_schema = 'public' 
-                                AND COLUMN_NAME='{column_name.lower()}' 
-                                AND table_name='{table_name.lower()}' 
+                                AND COLUMN_NAME='{column_name}' 
+                                AND table_name='{table_name}' 
                         );
                 """
         return query
@@ -76,7 +75,7 @@ class Table:
     def validate_column(self, table_name: str, column_name: str) -> bool:
         validate_column = self.conn.handler(
             query=self.get_validate_column_query(
-                table_name=table_name, column_name=self.clean_name(name=column_name)
+                table_name=table_name, column_name=column_name
             )
         )
         return validate_column[0][0]
@@ -101,20 +100,12 @@ class Table:
         return ['id integer PRIMARY KEY', 'updated_at date', 'created_at date', 'user_id integer']
 
     @staticmethod
-    def clean_name(name: str) -> str:
-        text = unidecode.unidecode(
-            name.replace("|", "")
-                .replace(" ", "_")
-                .replace("__", "_")
-                .replace("___", "_")
-        )
-        return text.upper()
+    def get_varchar_line(column: Tuple[Any]) -> str:
+        return f"{column[0]} {column[1]} 255"
 
-    def get_varchar_line(self, column: Tuple[Any]) -> str:
-        return f"{self.clean_name(name=column[0])} {column[1]} 255"
-
-    def get_normal_line(self, column: Tuple[Any]) -> str:
-        return f"{self.clean_name(name=column[0])} {column[1]}"
+    @staticmethod
+    def get_normal_line(column: Tuple[Any]) -> str:
+        return f"{column[0]} {column[1]}"
 
 
 if __name__ == "__main__":
