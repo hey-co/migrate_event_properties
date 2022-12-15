@@ -108,21 +108,21 @@ class Migration:
     @staticmethod
     def get_insert_conn():
         conn = psycopg2.connect(
-            database="hey_elcolombiano",
-            user="maiq",
-            password="qwerty123.",
-            host="migration-testing.ch3slpycdtsd.us-east-1.rds.amazonaws.com",
-            port="5432",
+            database=os.environ.get("MULTI_TENANCY_CLIENT_DB_NAME"),
+            user=os.environ.get("MULTI_TENANCY_DB_USER"),
+            password=os.environ.get("MULTI_TENANCY_DB_PASSWORD"),
+            host=os.environ.get("MULTI_TENANCY_DB_HOST"),
+            port=os.environ.get("MULTI_TENANCY_DB_PORT"),
         )
         conn.autocommit = True
         return conn
 
     @staticmethod
     def get_str_conn():
-        user = "maiq"
-        password = "qwerty123."
-        host = "migration-testing.ch3slpycdtsd.us-east-1.rds.amazonaws.com"
-        name = "hey_elcolombiano"
+        user = os.environ.get("MULTI_TENANCY_DB_USER")
+        password = os.environ.get("MULTI_TENANCY_DB_PASSWORD")
+        host = os.environ.get("MULTI_TENANCY_DB_HOST")
+        name = os.environ.get("MULTI_TENANCY_CLIENT_DB_NAME")
         conn_string = f"postgresql://{user}:{password}@{host}/{name}"
         return conn_string
 
