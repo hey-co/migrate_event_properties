@@ -181,7 +181,7 @@ class Migration:
         except Exception as e:
             raise e
         else:
-            return event_properties
+            return [ep for ep in event_properties]
 
     def get_migrated_schemas(self) -> List[Tuple[Any]]:
         try:
@@ -213,7 +213,7 @@ def lambda_handler(event, context):
 if __name__ == '__main__':
     lambda_handler(
         event={
-            "schema_name": "SGC_SPEC",
+            "schema_name": "sgc_spec",
             "private_key": "5Aj0fq2CyNqM7NCE"
         },
         context={}
