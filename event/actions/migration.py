@@ -85,11 +85,9 @@ class Migration:
         return ["name", "value", "email", "migrated", "valid", "event_id"]
 
     def insert_pivot(self, pivot: pd.DataFrame, schema_name: str):
-        conn = create_engine(self.get_str_conn()).connect()
         conn1 = self.get_insert_conn()
-        event_ids = list(pivot["id"])
-        pivot.to_sql(schema_name, conn, if_exists="append", index=False)
-        self.update_user_events_migrated(event_ids=event_ids)
+        pivot.to_sql(schema_name, create_engine(self.get_str_conn()).connect(), if_exists="append", index=False)
+        self.update_user_events_migrated(event_ids=list(pivot["id"]))
         conn1.commit()
         conn1.close()
 
