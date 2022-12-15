@@ -11,8 +11,19 @@ from event import schemas as validators
 
 class Migration:
     def __init__(self, event) -> None:
-        self.db_instance = main_db.DBInstance(public_key="kKS0DfTKpE8TqUZs")
+        self.db_instance = self.get_session_db(private_key=event.get("private_key"))
         self.event_schema_name = event.get("schema_name")
+
+    @staticmethod
+    def get_session_db(private_key: str = None):
+        dict_db_tenant = {
+            "db_name": os.environ.get("MULTI_TENANCY_DB_NAME"),
+            "db_user": os.environ.get("MULTI_TENANCY_DB_USER"),
+            "db_password": os.environ.get("MULTI_TENANCY_DB_PASSWORD"),
+            "db_port": os.environ.get("MULTI_TENANCY_DB_PORT"),
+            "db_host": os.environ.get("MULTI_TENANCY_DB_HOST"),
+        }
+        return multitenancy.get_session_by_secret_key(private_key, dict_db_tenant)
 
     def execute(self) -> None:
         schemas: List[Tuple[Any]] = self.get_migrated_schemas()
@@ -59,7 +70,7 @@ class Migration:
         return data
 
     @staticmethod
-    def get_pivot_columns(self, schema_properties) -> str:
+    def get_pivot_columns(schema_properties) -> str:
         columns = "event_id integer, " + ", ".join(
             [f'"{gp[1]}" {gp[2]}' for gp in schema_properties]
         )
@@ -153,7 +164,7 @@ class Migration:
         return query
 
     @staticmethod
-    def __get_generic_properties(self, schema_properties):
+    def __get_generic_properties(schema_properties):
         generic_properties_query = f"""
             SELECT a
             FROM (
@@ -196,7 +207,7 @@ class Migration:
 
 
 def lambda_handler(event, context):
-    return Migration().execute(event=event)
+    return Migration(event=event).execute()
 
 
 if __name__ == '__main__':
