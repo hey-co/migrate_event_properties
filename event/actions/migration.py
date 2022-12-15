@@ -10,8 +10,9 @@ from event import schemas as validators
 
 
 class Migration:
-    def __init__(self) -> None:
+    def __init__(self, event) -> None:
         self.db_instance = main_db.DBInstance(public_key="kKS0DfTKpE8TqUZs")
+        self.event_schema_name = event.get("schema_name")
 
     def execute(self) -> None:
         schemas: List[Tuple[Any]] = self.get_migrated_schemas()
@@ -57,6 +58,7 @@ class Migration:
         }
         return data
 
+    @staticmethod
     def get_pivot_columns(self, schema_properties) -> str:
         columns = "event_id integer, " + ", ".join(
             [f'"{gp[1]}" {gp[2]}' for gp in schema_properties]
@@ -146,12 +148,13 @@ class Migration:
                           AND migrated = false
                           AND valid = ''validated''
                         LIMIT
-                          100
+                          10000
                       )', '{generic_properties}') as ct({columns})
             ) as prop on user_event.id=prop.event_id
         """
         return query
 
+    @staticmethod
     def __get_generic_properties(self, schema_properties):
         generic_properties_query = f"""
             SELECT a
@@ -180,7 +183,7 @@ class Migration:
                     FROM 
                         event_schema 
                     WHERE 
-                        db_status='{validators.SqlStructureDbStatus.CREATE_PENDING}' and name='sgc_spec';
+                        db_status='{validators.SqlStructureDbStatus.CREATE_PENDING}' and name='{self.event_schema_name}';
                     """
             )
         except Exception as e:
@@ -194,6 +197,14 @@ class Migration:
         return event_properties
 
 
-if __name__ == "__main__":
-    validation = Migration()
-    print(validation.execute())
+def lambda_handler(event, context):
+    return Migration().execute(event=event)
+
+
+if __name__ == '__main__':
+    lambda_handler(
+        event={
+            "schema_name": "sgc_spec"
+        },
+        context={}
+    )
