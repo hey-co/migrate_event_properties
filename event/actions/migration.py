@@ -1,3 +1,4 @@
+import time
 from typing import List, Tuple, Dict, Any
 from sqlalchemy import create_engine
 
@@ -128,10 +129,12 @@ class Migration:
     def update_user_events_migrated(self, event_ids):
         try:
             self.db_instance.execute(
-                f"UPDATE user_event SET migrated=true WHERE id={', '.join(map(str, event_ids))};"
+                f"UPDATE user_event SET migrated=true WHERE id in ({', '.join(map(str, event_ids))});"
             )
         except Exception as e:
             raise e
+        else:
+            self.db_instance.commit()
 
     @staticmethod
     def get_pivot_query(columns, schema_name: str, generic_properties) -> str:
@@ -210,6 +213,7 @@ def lambda_handler(event, context):
 
 
 if __name__ == '__main__':
+    start_time = time.time()
     lambda_handler(
         event={
             "schema_name": "sgc_spec",
@@ -217,3 +221,4 @@ if __name__ == '__main__':
         },
         context={}
     )
+    print("--- %s seconds ---" % (time.time() - start_time))
