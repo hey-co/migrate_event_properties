@@ -126,13 +126,12 @@ class Migration:
         return conn_string
 
     def update_user_events_migrated(self, event_ids):
-        for event_id in event_ids:
-            try:
-                self.db_instance.execute(f"UPDATE user_event SET migrated=true WHERE id={event_id};")
-            except Exception as e:
-                raise e
-            else:
-                continue
+        try:
+            self.db_instance.execute(
+                f"UPDATE user_event SET migrated=true WHERE id={', '.join(map(str, event_ids))};"
+            )
+        except Exception as e:
+            raise e
 
     @staticmethod
     def get_pivot_query(columns, schema_name: str, generic_properties) -> str:
