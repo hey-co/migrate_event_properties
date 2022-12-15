@@ -1,12 +1,15 @@
 from typing import List, Tuple, Dict, Any
-from data_base import main_db
 from sqlalchemy import create_engine
 
+from dotenv import load_dotenv
 import pandas as pd
 import psycopg2
+import multitenancy
 import os
 
 from event import schemas as validators
+
+load_dotenv()
 
 
 class Migration:
@@ -44,7 +47,7 @@ class Migration:
 
     def get_pivot_insert(self, data: Dict[str, Any]) -> pd.DataFrame:
         pivot = self.get_data_frame(
-            data=self.db_instance.handler(
+            data=self.db_instance.execute(
                 query=self.get_pivot_query(
                     columns=data.get("pivot_columns"),
                     schema_name=data.get("schema_name"),
@@ -126,7 +129,7 @@ class Migration:
     def update_user_events_migrated(self, event_ids):
         for event_id in event_ids:
             try:
-                self.db_instance.handler(
+                self.db_instance.execute(
                     query=f"""UPDATE user_event SET migrated=true WHERE id={event_id};"""
                 )
             except Exception as e:
@@ -175,7 +178,7 @@ class Migration:
 
     def get_schema_properties(self, migrated_event_id: int):
         try:
-            event_properties = self.db_instance.handler(
+            event_properties = self.db_instance.execute(
                 query=f"select * from property_event_schema where event_id={migrated_event_id} ORDER BY name ASC;"
             )
         except Exception as e:
@@ -185,7 +188,7 @@ class Migration:
 
     def get_migrated_schemas(self) -> List[Tuple[Any]]:
         try:
-            event_schemas = self.db_instance.handler(
+            event_schemas = self.db_instance.execute(
                 query=f"""
                     SELECT 
                         * 
