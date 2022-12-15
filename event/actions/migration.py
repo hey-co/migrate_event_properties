@@ -47,8 +47,7 @@ class Migration:
 
     def get_pivot_insert(self, data: Dict[str, Any]) -> pd.DataFrame:
         pivot = self.get_data_frame(
-            data=self.db_instance.execute(
-                query=self.get_pivot_query(
+            data=self.db_instance.execute(self.get_pivot_query(
                     columns=data.get("pivot_columns"),
                     schema_name=data.get("schema_name"),
                     generic_properties=data.get("generic_properties")
@@ -129,9 +128,7 @@ class Migration:
     def update_user_events_migrated(self, event_ids):
         for event_id in event_ids:
             try:
-                self.db_instance.execute(
-                    query=f"""UPDATE user_event SET migrated=true WHERE id={event_id};"""
-                )
+                self.db_instance.execute(f"UPDATE user_event SET migrated=true WHERE id={event_id};")
             except Exception as e:
                 raise e
             else:
@@ -179,7 +176,7 @@ class Migration:
     def get_schema_properties(self, migrated_event_id: int):
         try:
             event_properties = self.db_instance.execute(
-                query=f"select * from property_event_schema where event_id={migrated_event_id} ORDER BY name ASC;"
+                f"select * from property_event_schema where event_id={migrated_event_id} ORDER BY name ASC;"
             )
         except Exception as e:
             raise e
@@ -189,14 +186,14 @@ class Migration:
     def get_migrated_schemas(self) -> List[Tuple[Any]]:
         try:
             event_schemas = self.db_instance.execute(
-                query=f"""
+                f"""
                     SELECT 
                         * 
                     FROM 
                         event_schema 
                     WHERE 
                         db_status='{validators.SqlStructureDbStatus.CREATE_PENDING}' and name='{self.event_schema_name}';
-                    """
+                """
             )
         except Exception as e:
             raise e
@@ -216,7 +213,8 @@ def lambda_handler(event, context):
 if __name__ == '__main__':
     lambda_handler(
         event={
-            "schema_name": "sgc_spec"
+            "schema_name": "SGC_SPEC",
+            "private_key": "5Aj0fq2CyNqM7NCE"
         },
         context={}
     )
