@@ -97,7 +97,15 @@ class Table:
 
     @staticmethod
     def get_base_fields() -> List[str]:
-        return ['id integer PRIMARY KEY', 'updated_at date', 'created_at date', 'user_id integer']
+        return [
+            'id integer PRIMARY KEY',
+            'updated_at date',
+            'created_at date',
+            'user_id integer',
+            'integration_id integer',
+            'integration_type varchar(100)',
+            'uuid varchar(40)'
+        ]
 
     @staticmethod
     def get_varchar_line(column: Tuple[Any]) -> str:
