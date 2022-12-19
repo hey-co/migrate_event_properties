@@ -91,6 +91,9 @@ class Migration:
             "email",
             "migrated",
             "valid",
+            "integration_id",
+            "integration_type",
+            "uuid",
             "event_id",
         ]
 
