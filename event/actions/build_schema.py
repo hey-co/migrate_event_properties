@@ -48,3 +48,21 @@ class EventSchema(Base):
 
         for (key, value) in zip(keys, values):
             self.__dict__[key] = value
+
+
+class BuildSchema:
+    def __init__(self, event):
+        self.columns = event.get("columns")
+        self.schema = EventSchema()
+
+    def add_columns(self):
+        for column in self.columns:
+            pass
+
+    def handler(self):
+        return self.add_columns()
+
+
+def lambda_handler():
+    return BuildSchema.handler()
+
