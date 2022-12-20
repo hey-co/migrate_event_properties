@@ -1,3 +1,4 @@
+import time
 import os
 from typing import Any, List, Tuple
 
@@ -61,7 +62,10 @@ class Table:
 
     def validate_table(self) -> bool:
         validate_table = self.conn.execute(self.get_validate_table_query())
-        return validate_table[0][0]
+        try:
+            return [result for result in validate_table][0][0]
+        except Exception as e:
+            raise e
 
     def get_validate_table_query(self) -> str:
         query = f"""SELECT 
@@ -90,12 +94,13 @@ class Table:
         return query
 
     def validate_column(self, table_name: str, column_name: str) -> bool:
-        validate_column = self.conn.handler(
-            query=self.get_validate_column_query(
-                table_name=table_name, column_name=column_name
-            )
+        validate_column = self.conn.execute(
+            self.get_validate_column_query(table_name=table_name, column_name=column_name)
         )
-        return validate_column[0][0]
+        try:
+            return [result for result in validate_column][0][0]
+        except Exception as e:
+            raise e
 
     def get_columns(self) -> List[Tuple[Any]]:
         columns = self.conn.execute(f"""
