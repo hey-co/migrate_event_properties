@@ -33,7 +33,8 @@ class Table:
     def create_table(self) -> None:
         line_fields = ", ".join(self.get_creation_fields())
         query_table = f"CREATE TABLE {self.name} ({line_fields});"
-        self.conn.handler(query=query_table)
+        self.conn.execute(query_table)
+        self.conn.commit()
 
     def get_creation_fields(self) -> List[str]:
         line_fields = []
@@ -55,10 +56,11 @@ class Table:
             line = self.get_varchar_line(column=column)
         else:
             line = self.get_normal_line(column=column)
-        self.conn.handler(query=f"ALTER TABLE {self.name} ADD COLUMN {line};")
+        self.conn.execute(f"ALTER TABLE {self.name} ADD COLUMN {line};")
+        self.conn.commit()
 
     def validate_table(self) -> bool:
-        validate_table = self.conn.handler(query=self.get_validate_table_query())
+        validate_table = self.conn.execute(self.get_validate_table_query())
         return validate_table[0][0]
 
     def get_validate_table_query(self) -> str:
@@ -96,7 +98,7 @@ class Table:
         return validate_column[0][0]
 
     def get_columns(self) -> List[Tuple[Any]]:
-        columns = self.conn.handler(query=f"""
+        columns = self.conn.execute(f"""
             SELECT
                 property_event_schema.name,
                 property_event_schema.type
