@@ -1,11 +1,26 @@
+import os
 from typing import Any, List, Tuple
-from data_base import main_db
+
+from dotenv import load_dotenv
+import multitenancy
+load_dotenv()
 
 
 class Table:
-    def __init__(self, name: str):
-        self.name = name
-        self.conn = main_db.DBInstance(public_key="kKS0DfTKpE8TqUZs")
+    def __init__(self, event):
+        self.name = event.get("schema_name")
+        self.conn = self.get_session_db(private_key=event.get("private_key"))
+
+    @staticmethod
+    def get_session_db(private_key: str = None):
+        dict_db_tenant = {
+            "db_name": os.environ.get("MULTI_TENANCY_DB_NAME"),
+            "db_user": os.environ.get("MULTI_TENANCY_DB_USER"),
+            "db_password": os.environ.get("MULTI_TENANCY_DB_PASSWORD"),
+            "db_port": os.environ.get("MULTI_TENANCY_DB_PORT"),
+            "db_host": os.environ.get("MULTI_TENANCY_DB_HOST"),
+        }
+        return multitenancy.get_session_by_secret_key(private_key, dict_db_tenant)
 
     def build_table(self) -> str:
         if self.validate_table():
@@ -116,6 +131,5 @@ class Table:
         return f"{column[0]} {column[1]}"
 
 
-if __name__ == "__main__":
-    table = Table(name='sgc_spec')
-    print(table.build_table())
+def lambda_handler(event, context):
+    return Table(event=event).build_table()
