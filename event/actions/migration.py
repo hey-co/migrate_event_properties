@@ -150,7 +150,7 @@ class Migration:
                       event_property.value as value
                     FROM
                       event_property
-                      INNER JOIN user_event ON event_property.event_id = user_event.id
+                      RIGHT JOIN user_event ON event_property.event_id = user_event.id
                     WHERE
                       user_event.id in (
                         SELECT
@@ -162,7 +162,7 @@ class Migration:
                           AND migrated = false
                           AND valid = ''validated''
                         LIMIT
-                          10000
+                          100000
                       )', '{generic_properties}') as ct({columns})
             ) as prop on user_event.id=prop.event_id
         """
@@ -213,15 +213,3 @@ class Migration:
 
 def lambda_handler(event, context):
     return Migration(event=event).execute()
-
-
-if __name__ == '__main__':
-    start_time = time.time()
-    lambda_handler(
-        event={
-            "schema_name": "sgc_spec",
-            "private_key": "5Aj0fq2CyNqM7NCE"
-        },
-        context={}
-    )
-    print("--- %s seconds ---" % (time.time() - start_time))

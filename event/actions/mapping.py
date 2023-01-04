@@ -230,11 +230,3 @@ class Mapping:
 def lambda_handler(event, context):
     return Mapping(event=event).handler()
 
-
-if __name__ == '__main__':
-    lambda_handler(
-        event={
-            "private_key": "5Aj0fq2CyNqM7NCE"
-        },
-        context={}
-    )
